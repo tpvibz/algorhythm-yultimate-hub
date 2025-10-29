@@ -8,48 +8,54 @@ All colors MUST be HSL.
 
 @layer base {
   :root {
-    /* AlgoRhythm Design System - Sports Energy Theme */
-    --background: 0 0% 100%;
-    --foreground: 222 47% 11%;
+    /* AlgoRhythm Dark Glassmorphism Theme */
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222 47% 11%;
+    --card: 240 10% 8%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222 47% 11%;
+    --popover: 240 10% 8%;
+    --popover-foreground: 0 0% 98%;
 
-    /* Electric Blue Primary */
-    --primary: 207 90% 54%;
+    /* Neon Blue Primary */
+    --primary: 217 91% 60%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 207 90% 64%;
+    --primary-glow: 217 91% 70%;
 
     /* Vibrant Orange Secondary */
     --secondary: 26 100% 56%;
     --secondary-foreground: 0 0% 100%;
     --secondary-glow: 26 100% 66%;
 
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
+    --muted: 240 10% 15%;
+    --muted-foreground: 240 5% 65%;
 
-    --accent: 207 90% 54%;
+    --accent: 217 91% 60%;
     --accent-foreground: 0 0% 100%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 0 0% 100%;
 
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 207 90% 54%;
+    --border: 240 10% 18%;
+    --input: 240 10% 15%;
+    --ring: 217 91% 60%;
 
-    --radius: 0.75rem;
+    --radius: 1rem;
+    
+    /* Glassmorphism */
+    --glass-bg: 240 10% 8% / 0.4;
+    --glass-border: 240 10% 20% / 0.2;
+    --glass-glow: 217 91% 60% / 0.1;
     
     /* Gradients */
-    --gradient-hero: linear-gradient(135deg, hsl(207 90% 54%) 0%, hsl(26 100% 56%) 100%);
-    --gradient-card: linear-gradient(135deg, hsl(207 90% 96%) 0%, hsl(26 100% 96%) 100%);
+    --gradient-hero: linear-gradient(135deg, hsl(217 91% 60%) 0%, hsl(26 100% 56%) 100%);
+    --gradient-glass: linear-gradient(135deg, hsl(240 10% 8% / 0.6) 0%, hsl(240 10% 12% / 0.4) 100%);
     
     /* Shadows */
-    --shadow-sport: 0 10px 30px -10px hsl(207 90% 54% / 0.3);
-    --shadow-glow: 0 0 40px hsl(207 90% 64% / 0.2);
+    --shadow-glass: 0 8px 32px 0 hsl(0 0% 0% / 0.37);
+    --shadow-glow: 0 0 60px hsl(217 91% 60% / 0.3);
+    --shadow-glow-orange: 0 0 60px hsl(26 100% 56% / 0.3);
     
     /* Transitions */
     --transition-smooth: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
@@ -72,35 +78,36 @@ All colors MUST be HSL.
   }
 
   .dark {
-    --background: 222 47% 11%;
-    --foreground: 210 40% 98%;
+    /* Same as root for consistent dark theme */
+    --background: 240 10% 3.9%;
+    --foreground: 0 0% 98%;
 
-    --card: 217 33% 17%;
-    --card-foreground: 210 40% 98%;
+    --card: 240 10% 8%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 222 47% 11%;
-    --popover-foreground: 210 40% 98%;
+    --popover: 240 10% 8%;
+    --popover-foreground: 0 0% 98%;
 
-    --primary: 207 90% 54%;
+    --primary: 217 91% 60%;
     --primary-foreground: 0 0% 100%;
-    --primary-glow: 207 90% 64%;
+    --primary-glow: 217 91% 70%;
 
     --secondary: 26 100% 56%;
     --secondary-foreground: 0 0% 100%;
     --secondary-glow: 26 100% 66%;
 
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
+    --muted: 240 10% 15%;
+    --muted-foreground: 240 5% 65%;
 
-    --accent: 207 90% 54%;
+    --accent: 217 91% 60%;
     --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 63% 31%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 217 33% 17%;
-    --input: 217 33% 17%;
-    --ring: 207 90% 54%;
+    --border: 240 10% 18%;
+    --input: 240 10% 15%;
+    --ring: 217 91% 60%;
     --sidebar-background: 240 5.9% 10%;
     --sidebar-foreground: 240 4.8% 95.9%;
     --sidebar-primary: 224.3 76.3% 48%;
@@ -119,5 +126,27 @@ All colors MUST be HSL.
 
   body {
     @apply bg-background text-foreground;
+    background: radial-gradient(ellipse at top, hsl(240 10% 8%) 0%, hsl(240 10% 3.9%) 100%);
+    min-height: 100vh;
+  }
+}
+
+@layer components {
+  /* Glassmorphism utilities */
+  .glass-card {
+    @apply bg-card/40 backdrop-blur-xl border border-white/10;
+    box-shadow: 0 8px 32px 0 rgba(0, 0, 0, 0.37);
+  }
+  
+  .glass-hover {
+    @apply hover:bg-card/60 hover:border-white/20 transition-all duration-300;
+  }
+  
+  .glow-blue {
+    box-shadow: 0 0 40px hsl(217 91% 60% / 0.3);
+  }
+  
+  .glow-orange {
+    box-shadow: 0 0 40px hsl(26 100% 56% / 0.3);
   }
 }

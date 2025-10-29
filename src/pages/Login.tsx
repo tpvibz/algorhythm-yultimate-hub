@@ -30,8 +30,9 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center p-4 bg-gradient-to-br from-primary/5 to-secondary/5">
-      <Card className="w-full max-w-md shadow-xl animate-slide-up">
+    <div className="min-h-screen flex items-center justify-center p-4 relative">
+      <div className="absolute inset-0 bg-gradient-to-br from-primary/10 via-transparent to-secondary/10 pointer-events-none"></div>
+      <Card className="w-full max-w-md glass-card animate-slide-up glow-blue relative z-10">
         <CardHeader className="text-center space-y-4">
           <div className="flex justify-center">
             <div className="bg-gradient-to-br from-primary to-secondary p-3 rounded-xl">

@@ -10,7 +10,8 @@ const Home = () => {
       <Navbar />
       
       {/* Hero Section */}
-      <section className="pt-32 pb-20 px-4">
+      <section className="pt-32 pb-20 px-4 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-primary/5 to-transparent pointer-events-none"></div>
         <div className="container mx-auto text-center">
           <div className="max-w-4xl mx-auto space-y-8 animate-slide-up">
             <h1 className="text-5xl md:text-7xl font-bold leading-tight">
@@ -39,7 +40,8 @@ const Home = () => {
       </section>
 
       {/* Features Section */}
-      <section className="py-20 px-4 bg-muted/30">
+      <section className="py-20 px-4 relative">
+        <div className="absolute inset-0 bg-gradient-to-b from-transparent via-primary/5 to-transparent pointer-events-none"></div>
         <div className="container mx-auto">
           <h2 className="text-4xl font-bold text-center mb-12">
             How It Works
@@ -64,7 +66,7 @@ const Home = () => {
             ].map((feature, index) => (
               <Card 
                 key={index} 
-                className="border-none shadow-lg hover:shadow-xl transition-all hover:-translate-y-1 animate-slide-up"
+                className="glass-card glass-hover border-white/10 hover:-translate-y-1 animate-slide-up"
                 style={{ animationDelay: `${index * 0.1}s` }}
               >
                 <CardContent className="p-8 text-center space-y-4">

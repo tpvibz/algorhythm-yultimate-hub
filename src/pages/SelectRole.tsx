@@ -59,7 +59,7 @@ const SelectRole = () => {
             {roles.map((role, index) => (
               <Card
                 key={role.id}
-                className="border-2 hover:border-primary cursor-pointer transition-all hover:shadow-xl hover:-translate-y-2 animate-slide-up"
+                className="glass-card glass-hover border-white/10 hover:border-primary/50 cursor-pointer transition-all hover:-translate-y-2 animate-slide-up glow-blue"
                 style={{ animationDelay: `${index * 0.1}s` }}
                 onClick={() => navigate(`/login/${role.id}`)}
               >

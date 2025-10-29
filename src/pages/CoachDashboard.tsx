@@ -36,7 +36,7 @@ const CoachDashboard = () => {
             {stats.map((stat, index) => (
               <Card 
                 key={index} 
-                className="border-none shadow-lg hover:shadow-xl transition-all hover:-translate-y-1 animate-slide-up"
+                className="glass-card glass-hover hover:-translate-y-1 animate-slide-up glow-orange"
                 style={{ animationDelay: `${index * 0.05}s` }}
               >
                 <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -59,7 +59,7 @@ const CoachDashboard = () => {
 
           {/* Management Sections */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            <Card className="shadow-lg animate-slide-up" style={{ animationDelay: '0.2s' }}>
+            <Card className="glass-card glass-hover animate-slide-up" style={{ animationDelay: '0.2s' }}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Calendar className="h-5 w-5" />
@@ -88,7 +88,7 @@ const CoachDashboard = () => {
               </CardContent>
             </Card>
 
-            <Card className="shadow-lg animate-slide-up" style={{ animationDelay: '0.3s' }}>
+            <Card className="glass-card glass-hover animate-slide-up" style={{ animationDelay: '0.3s' }}>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <BookOpen className="h-5 w-5" />
