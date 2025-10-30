@@ -13,6 +13,14 @@ import AdminDashboard from "./pages/AdminDashboard";
 import CoachDashboard from "./pages/CoachDashboard";
 import VolunteerDashboard from "./pages/VolunteerDashboard";
 import PlayerDashboard from "./pages/PlayerDashboard";
+import Schedule from "./pages/Schedule";
+import PoolBracket from "./pages/PoolBracket";
+import Teams from "./pages/Teams";
+import PlayerStats from "./pages/PlayerStats";
+import Spirit from "./pages/Spirit";
+import Fanzone from "./pages/Fanzone";
+import Gallery from "./pages/Gallery";
+import Scoreboard from "./pages/Scoreboard";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -34,6 +42,14 @@ const App = () => (
             <Route path="/dashboard/coach" element={<CoachDashboard />} />
             <Route path="/dashboard/volunteer" element={<VolunteerDashboard />} />
             <Route path="/dashboard/player" element={<PlayerDashboard />} />
+            <Route path="/schedule" element={<Schedule />} />
+            <Route path="/pool-bracket" element={<PoolBracket />} />
+            <Route path="/teams" element={<Teams />} />
+            <Route path="/player-stats" element={<PlayerStats />} />
+            <Route path="/spirit" element={<Spirit />} />
+            <Route path="/fanzone" element={<Fanzone />} />
+            <Route path="/gallery" element={<Gallery />} />
+            <Route path="/scoreboard" element={<Scoreboard />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>
