@@ -11,10 +11,17 @@ import authRoutes from "./routes/authRoutes.js";
 import sessionRoutes from "./routes/sessionRoutes.js";
 import tournamentRoutes from "./routes/tournamentRoutes.js";
 import teamRoutes from "./routes/teamRoutes.js";
+import scheduleRoutes from "./routes/scheduleRoutes.js";
+import volunteerRoutes from "./routes/volunteerRoutes.js";
+import scoreRoutes from "./routes/scoreRoutes.js";
+import predictionRoutes from "./routes/predictionRoutes.js";
+import leaderboardRoutes from "./routes/leaderboardRoutes.js";
+import matchImageRoutes from "./routes/matchImageRoutes.js";
 import attendanceRoutes from "./routes/attendanceRoutes.js";
 import studentRoutes from "./routes/studentRoutes.js";
 import institutionRoutes from "./routes/institutionRoutes.js";
 import playerRoutes from "./routes/playerRoutes.js";
+
 // ✅ Fix for __dirname and __filename in ES Modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -36,10 +43,17 @@ app.use("/api/auth", authRoutes);
 app.use("/api/sessions", sessionRoutes);
 app.use("/api/tournaments", tournamentRoutes);
 app.use("/api/teams", teamRoutes);
+app.use("/api/schedule", scheduleRoutes);
+app.use("/api/volunteers", volunteerRoutes);
+app.use("/api/score", scoreRoutes);
+app.use("/api/predictions", predictionRoutes);
+app.use("/api/leaderboard", leaderboardRoutes);
+app.use("/api/match-images", matchImageRoutes);
 app.use("/api/attendance", attendanceRoutes);
 app.use("/api/students", studentRoutes);
 app.use("/api/institutions", institutionRoutes);
 app.use("/api/player", playerRoutes);
+
 // ✅ Serve uploaded files statically
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 

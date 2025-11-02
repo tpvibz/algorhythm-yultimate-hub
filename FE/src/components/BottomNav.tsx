@@ -1,5 +1,5 @@
 import { Link, useLocation } from "react-router-dom";
-import { Calendar, Trophy, Users, BarChart3, Heart, PartyPopper, Image, Target } from "lucide-react";
+import { Calendar, Trophy, Users, BarChart3, Heart, Image, Target, Award } from "lucide-react";
 
 const BottomNav = () => {
   const location = useLocation();
@@ -10,9 +10,9 @@ const BottomNav = () => {
     { name: "Teams", path: "/teams", icon: Users },
     { name: "Player Stats", path: "/player-stats", icon: BarChart3 },
     { name: "Spirit", path: "/spirit", icon: Heart },
-    { name: "Fanzone", path: "/fanzone", icon: PartyPopper },
     { name: "Gallery", path: "/gallery", icon: Image },
     { name: "Scoreboard", path: "/scoreboard", icon: Target },
+    { name: "Leaderboards", path: "/leaderboards", icon: Award },
   ];
 
   return (

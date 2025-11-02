@@ -1,8 +1,10 @@
 import { useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { Trophy, Target, Calendar, Settings, Plus, Loader2 } from "lucide-react";
+import { Trophy, Target, Calendar, Settings, Plus, Loader2, Users } from "lucide-react";
 import { Tournament } from "@/services/api";
 import CreateTournament from "@/components/CreateTournament";
+import MatchManagementModal from "./MatchManagementModal";
+import AssignVolunteersModal from "./AssignVolunteersModal";
 
 interface TournamentsTabProps {
   tournaments: Tournament[];
@@ -12,6 +14,9 @@ interface TournamentsTabProps {
 
 const TournamentsTab = ({ tournaments, tournamentsLoading, onTournamentSuccess }: TournamentsTabProps) => {
   const [showCreateTournament, setShowCreateTournament] = useState(false);
+  const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
+  const [showMatchManagement, setShowMatchManagement] = useState(false);
+  const [showAssignVolunteers, setShowAssignVolunteers] = useState(false);
 
   // Format date range for tournaments
   const formatDateRange = (startDate: string, endDate: string) => {
@@ -131,10 +136,26 @@ const TournamentsTab = ({ tournaments, tournamentsLoading, onTournamentSuccess }
                         </p>
                       )}
                     </div>
-                    <div className="flex gap-2">
-                      <button className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors">
+                    <div className="flex flex-wrap gap-2">
+                      <button 
+                        onClick={() => {
+                          setSelectedTournament(tournament);
+                          setShowMatchManagement(true);
+                        }}
+                        className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+                      >
                         <Settings className="h-4 w-4 inline mr-2" />
                         Manage
+                      </button>
+                      <button 
+                        onClick={() => {
+                          setSelectedTournament(tournament);
+                          setShowAssignVolunteers(true);
+                        }}
+                        className="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors"
+                      >
+                        <Users className="h-4 w-4 inline mr-2" />
+                        Assign Volunteers
                       </button>
                       <button className="px-4 py-2 bg-muted text-foreground rounded-lg hover:bg-muted/80 transition-colors">
                         View Details
@@ -147,6 +168,29 @@ const TournamentsTab = ({ tournaments, tournamentsLoading, onTournamentSuccess }
           })}
         </div>
       )}
+
+      {/* Match Management Modal */}
+      <MatchManagementModal
+        tournament={selectedTournament}
+        open={showMatchManagement}
+        onClose={() => {
+          setShowMatchManagement(false);
+          setSelectedTournament(null);
+        }}
+      />
+
+      {/* Assign Volunteers Modal */}
+      <AssignVolunteersModal
+        tournament={selectedTournament}
+        open={showAssignVolunteers}
+        onClose={() => {
+          setShowAssignVolunteers(false);
+          setSelectedTournament(null);
+        }}
+        onSuccess={() => {
+          // Optionally refresh tournaments or show success message
+        }}
+      />
     </div>
   );
 };

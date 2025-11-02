@@ -1,11 +1,17 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, Heart, Users, Trophy, Camera, Star } from "lucide-react";
+import { Calendar, Heart, Users, Trophy, Camera, Star, Trophy as TrophyIcon, TrendingUp, Image as ImageIcon } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import BottomNav from "@/components/BottomNav";
 import VolunteerNavbar from "@/components/VolunteerNavbar";
 import VolunteerNotifications from "@/components/VolunteerNotifications";
+import AssignedTournamentsTab from "./VolunteerDashboard/AssignedTournamentsTab";
+import LiveScoringTab from "./VolunteerDashboard/LiveScoringTab";
+import MatchImagesTab from "./VolunteerDashboard/MatchImagesTab";
 
 const VolunteerDashboard = () => {
+  const [activeTab, setActiveTab] = useState<"overview" | "assigned-tournaments" | "live-scoring" | "match-images">("overview");
+
   const stats = [
     { icon: Calendar, label: "Upcoming Events", value: "5", change: "This month" },
     { icon: Heart, label: "Hours Contributed", value: "24", change: "+6 this week" },
@@ -62,7 +68,61 @@ const VolunteerDashboard = () => {
             ))}
           </div>
 
-          {/* Sections */}
+          {/* Tabs */}
+          <div className="mb-6 flex gap-3 border-b border-border">
+            <button
+              onClick={() => setActiveTab("overview")}
+              className={`px-4 py-2 font-medium transition-colors ${
+                activeTab === "overview"
+                  ? "border-b-2 border-primary text-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              Overview
+            </button>
+            <button
+              onClick={() => setActiveTab("assigned-tournaments")}
+              className={`px-4 py-2 font-medium transition-colors ${
+                activeTab === "assigned-tournaments"
+                  ? "border-b-2 border-primary text-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <TrophyIcon className="h-4 w-4 inline mr-2" />
+              Assigned Tournaments
+            </button>
+            <button
+              onClick={() => setActiveTab("live-scoring")}
+              className={`px-4 py-2 font-medium transition-colors ${
+                activeTab === "live-scoring"
+                  ? "border-b-2 border-primary text-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <TrendingUp className="h-4 w-4 inline mr-2" />
+              Live Scoring
+            </button>
+            <button
+              onClick={() => setActiveTab("match-images")}
+              className={`px-4 py-2 font-medium transition-colors ${
+                activeTab === "match-images"
+                  ? "border-b-2 border-primary text-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <ImageIcon className="h-4 w-4 inline mr-2" />
+              Match Images
+            </button>
+          </div>
+
+          {/* Tab Content */}
+          {activeTab === "assigned-tournaments" && <AssignedTournamentsTab />}
+          {activeTab === "live-scoring" && <LiveScoringTab />}
+          {activeTab === "match-images" && <MatchImagesTab />}
+
+          {activeTab === "overview" && (
+            <>
+              {/* Sections */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
             <Card className="glass-card glass-hover animate-slide-up" style={{ animationDelay: '0.2s' }}>
               <CardHeader>
@@ -123,6 +183,8 @@ const VolunteerDashboard = () => {
               </CardContent>
             </Card>
           </div>
+            </>
+          )}
         </div>
       </div>
       <BottomNav />

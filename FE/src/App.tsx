@@ -21,8 +21,9 @@ import Spirit from "./pages/Spirit";
 import Fanzone from "./pages/Fanzone";
 import Gallery from "./pages/Gallery";
 import Scoreboard from "./pages/Scoreboard";
-import NotFound from "./pages/NotFound";
+import Leaderboards from "./pages/Leaderboards";
 import Tournaments from "@/pages/Tournaments";
+import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
 
@@ -52,6 +53,7 @@ const App = () => (
             <Route path="/gallery" element={<Gallery />} />
             <Route path="/tournaments" element={<Tournaments />} />
             <Route path="/scoreboard" element={<Scoreboard />} />
+            <Route path="/leaderboards" element={<Leaderboards />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import {
-  Trophy, BarChart3, Calendar, UserCheck, Users, FileText
+  Trophy, BarChart3, Calendar, UserCheck, Users, FileText, CalendarDays
 } from "lucide-react";
 import AdminNavbar from "@/components/AdminNavbar";
 import BottomNav from "@/components/BottomNav";
@@ -11,6 +11,7 @@ import SessionsTab from "./SessionsTab";
 import AccountsTab from "./AccountsTab";
 import VolunteersTab from "./VolunteersTab";
 import ReportsTab from "./ReportsTab";
+import ScheduleBuilderTab from "./ScheduleBuilderTab";
 import { tournamentAPI, authAPI, Tournament, handleAPIError } from "@/services/api";
 
 const AdminDashboard = () => {
@@ -56,10 +57,10 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleApprove = async (id: string | number, coachId?: string, type: 'account' | 'volunteer' = 'account') => {
+  const handleApprove = async (id: string | number, type: 'account' | 'volunteer' = 'account') => {
     try {
       if (type === 'account') {
-        await authAPI.approvePlayer(id.toString(), coachId);
+        await authAPI.approvePlayer(id.toString());
         toast.success('Player approved successfully!');
         fetchPendingRequests();
       } else {
@@ -131,6 +132,7 @@ const AdminDashboard = () => {
           <div className="flex flex-wrap gap-3 mb-8">
             <TabButton id="overview" label="Overview" icon={BarChart3} />
             <TabButton id="tournaments" label="Tournaments" icon={Trophy} />
+            <TabButton id="schedule-builder" label="Schedule Builder" icon={CalendarDays} />
             <TabButton id="sessions" label="Coaching Sessions" icon={Calendar} />
             <TabButton id="accounts" label="Account Requests" icon={UserCheck} />
             <TabButton id="volunteers" label="Volunteers" icon={Users} />
@@ -140,6 +142,7 @@ const AdminDashboard = () => {
           {/* Tab Content */}
           {activeTab === "overview" && <OverviewTab setActiveTab={setActiveTab} tournaments={tournaments} />}
           {activeTab === "tournaments" && <TournamentsTab tournaments={tournaments} tournamentsLoading={tournamentsLoading} onTournamentSuccess={onTournamentSuccess} />}
+          {activeTab === "schedule-builder" && <ScheduleBuilderTab />}
           {activeTab === "sessions" && <SessionsTab />}
           {activeTab === "accounts" && (
             <AccountsTab 
