@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -17,8 +17,46 @@ const Register = () => {
     role: "",
     password: "",
     confirmPassword: "",
+    // Player-specific fields
+    age: "",
+    gender: "",
+    experience: "",
+    affiliationType: "",
+    affiliationId: "",
   });
   const [isLoading, setIsLoading] = useState(false);
+  const [schools, setSchools] = useState<any[]>([]);
+  const [communities, setCommunities] = useState<any[]>([]);
+  const [loadingInstitutions, setLoadingInstitutions] = useState(false);
+
+  useEffect(() => {
+    if (formData.role === "player") {
+      fetchInstitutions();
+    }
+  }, [formData.role]);
+
+  const fetchInstitutions = async () => {
+    try {
+      setLoadingInstitutions(true);
+      const [schoolsRes, communitiesRes] = await Promise.all([
+        fetch("http://localhost:5000/api/institutions/schools"),
+        fetch("http://localhost:5000/api/institutions/communities"),
+      ]);
+
+      if (schoolsRes.ok) {
+        const schoolsData = await schoolsRes.json();
+        setSchools(schoolsData);
+      }
+      if (communitiesRes.ok) {
+        const communitiesData = await communitiesRes.json();
+        setCommunities(communitiesData);
+      }
+    } catch (error) {
+      console.error("Error fetching institutions:", error);
+    } finally {
+      setLoadingInstitutions(false);
+    }
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,24 +72,46 @@ const Register = () => {
     if (formData.password !== formData.confirmPassword)
       return toast.error("Passwords do not match");
 
+    // Player-specific validations
+    if (formData.role === "player") {
+      if (!formData.age.trim()) return toast.error("Age is required");
+      if (isNaN(Number(formData.age)) || Number(formData.age) < 1 || Number(formData.age) > 120)
+        return toast.error("Please enter a valid age");
+      if (!formData.gender) return toast.error("Gender is required");
+      if (!formData.experience.trim()) return toast.error("Experience level is required");
+      if (!formData.affiliationType) return toast.error("Affiliation type is required");
+      if (!formData.affiliationId) return toast.error("Please select your school or community");
+    }
+
     setIsLoading(true);
 
     try {
       const [firstName, ...rest] = formData.name.trim().split(" ");
       const lastName = rest.join(" ") || "";
 
+      const requestBody: any = {
+        firstName,
+        lastName,
+        email: formData.email.trim(),
+        phone: formData.phone.trim(),
+        role: formData.role,
+        password: formData.password.trim(),
+        confirmPassword: formData.confirmPassword.trim(),
+      };
+
+      // Add player-specific fields if role is player
+      if (formData.role === "player") {
+        requestBody.age = Number(formData.age);
+        requestBody.gender = formData.gender;
+        requestBody.experience = formData.experience.trim();
+        requestBody.affiliationType = formData.affiliationType;
+        requestBody.affiliationId = formData.affiliationId;
+      }
+
       const response = await fetch("http://localhost:5000/api/auth/signup/player", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          firstName,
-          lastName,
-          email: formData.email.trim(),
-          phone: formData.phone.trim(),
-          role: formData.role,
-          password: formData.password.trim(),
-          confirmPassword: formData.confirmPassword.trim(),
-        }),
+        body: JSON.stringify(requestBody),
       });
 
       const data = await response.json();
@@ -127,7 +187,17 @@ const Register = () => {
               <Label htmlFor="role">I am a...</Label>
               <Select
                 value={formData.role}
-                onValueChange={(value) => setFormData({ ...formData, role: value })}
+                onValueChange={(value) =>
+                  setFormData({
+                    ...formData,
+                    role: value,
+                    age: "",
+                    gender: "",
+                    experience: "",
+                    affiliationType: "",
+                    affiliationId: "",
+                  })
+                }
               >
                 <SelectTrigger>
                   <SelectValue placeholder="Select your role" />
@@ -140,6 +210,109 @@ const Register = () => {
                 </SelectContent>
               </Select>
             </div>
+
+            {/* Player-specific fields */}
+            {formData.role === "player" && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="age">Age</Label>
+                  <Input
+                    id="age"
+                    type="number"
+                    placeholder="e.g., 25"
+                    min="1"
+                    max="120"
+                    value={formData.age}
+                    onChange={(e) => setFormData({ ...formData, age: e.target.value })}
+                    required
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="gender">Gender</Label>
+                  <Select
+                    value={formData.gender}
+                    onValueChange={(value) => setFormData({ ...formData, gender: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select gender" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="male">Male</SelectItem>
+                      <SelectItem value="female">Female</SelectItem>
+                      <SelectItem value="other">Other</SelectItem>
+                      <SelectItem value="prefer-not-to-say">Prefer not to say</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="experience">Experience Level</Label>
+                  <Select
+                    value={formData.experience}
+                    onValueChange={(value) => setFormData({ ...formData, experience: value })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select experience level" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="beginner">Beginner (0-1 years)</SelectItem>
+                      <SelectItem value="intermediate">Intermediate (1-3 years)</SelectItem>
+                      <SelectItem value="advanced">Advanced (3-5 years)</SelectItem>
+                      <SelectItem value="expert">Expert (5+ years)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {/* Affiliation fields */}
+                <div className="space-y-2">
+                  <Label htmlFor="affiliationType">Affiliation Type</Label>
+                  <Select
+                    value={formData.affiliationType}
+                    onValueChange={(value) =>
+                      setFormData({ ...formData, affiliationType: value, affiliationId: "" })
+                    }
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Select affiliation type" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="school">School</SelectItem>
+                      <SelectItem value="community">Community</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+
+                {formData.affiliationType && (
+                  <div className="space-y-2">
+                    <Label htmlFor="affiliationId">
+                      Select {formData.affiliationType === "school" ? "School" : "Community"}
+                    </Label>
+                    {loadingInstitutions ? (
+                      <div className="text-sm text-muted-foreground py-2">Loading...</div>
+                    ) : (
+                      <Select
+                        value={formData.affiliationId}
+                        onValueChange={(value) => setFormData({ ...formData, affiliationId: value })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder={`Select a ${formData.affiliationType}`} />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {(formData.affiliationType === "school" ? schools : communities).map(
+                            (institution) => (
+                              <SelectItem key={institution._id} value={institution._id}>
+                                {institution.name} ({institution.location})
+                              </SelectItem>
+                            )
+                          )}
+                        </SelectContent>
+                      </Select>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
 
             {/* Password fields */}
             <div className="space-y-2">

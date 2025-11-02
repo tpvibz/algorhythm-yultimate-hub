@@ -10,7 +10,11 @@ import connectDB from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import sessionRoutes from "./routes/sessionRoutes.js";
 import tournamentRoutes from "./routes/tournamentRoutes.js";
-import teamRoutes from "./routes/teamRoutes.js"
+import teamRoutes from "./routes/teamRoutes.js";
+import attendanceRoutes from "./routes/attendanceRoutes.js";
+import studentRoutes from "./routes/studentRoutes.js";
+import institutionRoutes from "./routes/institutionRoutes.js";
+import playerRoutes from "./routes/playerRoutes.js";
 // ✅ Fix for __dirname and __filename in ES Modules
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -31,7 +35,11 @@ app.use(cors());
 app.use("/api/auth", authRoutes);
 app.use("/api/sessions", sessionRoutes);
 app.use("/api/tournaments", tournamentRoutes);
-app.use("/api/teams",teamRoutes)
+app.use("/api/teams", teamRoutes);
+app.use("/api/attendance", attendanceRoutes);
+app.use("/api/students", studentRoutes);
+app.use("/api/institutions", institutionRoutes);
+app.use("/api/player", playerRoutes);
 // ✅ Serve uploaded files statically
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 

@@ -4,8 +4,10 @@ import {
   approvePlayer,
   loginUser,
   getPendingRequests,
-  rejectRequest
+  rejectRequest,
+  getActiveCoaches
 } from "../controllers/authController.js";
+import { getAssignedStudents } from "../controllers/coachController.js";
 
 const router = express.Router();
 
@@ -20,6 +22,12 @@ router.post("/login", loginUser);
 
 // 🆕 Match frontend call exactly
 router.get("/requests", getPendingRequests);
-router.post("/reject", rejectRequest);
+router.post("/reject/player", rejectRequest);
+
+// Get active coaches
+router.get("/coaches/active", getActiveCoaches);
+
+// Get assigned students for a coach
+router.get("/coach/:coachId/students", getAssignedStudents);
 
 export default router;

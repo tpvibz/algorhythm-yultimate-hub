@@ -7,19 +7,17 @@ const roleRequestSchema = new mongoose.Schema(
       lastName: String,
       email: String,
       phone: String,
-      passwordHash: String,
+      // Player-specific fields
+      age: Number,
+      gender: String,
+      experience: String,
     },
     requestedRole: {
       type: String,
       enum: ["player", "coach", "volunteer"],
       required: true,
     },
-        passwordHash: { type: String, required: true }, // ✅ ADD THIS
-    status: {
-      type: String,
-      enum: ["pending", "approved", "rejected"],
-      default: "pending",
-    },
+    passwordHash: { type: String, required: true },
     status: {
       type: String,
       enum: ["pending", "approved", "rejected"],

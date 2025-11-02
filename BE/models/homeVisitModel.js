@@ -7,6 +7,7 @@ const homeVisitSchema = new mongoose.Schema(
     visitDate: Date,
     durationMinutes: Number,
     notes: String,
+    remarks: String,
     attachments: [String],
   },
   { timestamps: true }

@@ -1,5 +1,6 @@
 import Team from "../models/teamModel.js";
 import Person from "../models/personModel.js";
+import PlayerProfile from "../models/playerProfileModel.js";
 
 // Create a new team (coach registers on behalf of a team)
 export const createTeam = async (req, res) => {
@@ -26,6 +27,26 @@ export const createTeam = async (req, res) => {
     // Optionally verify coach exists
     const coach = await Person.findById(coachId);
     if (!coach) return res.status(404).json({ message: "Coach not found" });
+
+    // Validate that all players are assigned to this coach
+    if (players && Array.isArray(players) && players.length > 0) {
+      const playerIds = players.map(p => p.playerId || p._id).filter(id => id);
+      if (playerIds.length > 0) {
+        const assignedPlayers = await PlayerProfile.find({
+          assignedCoachId: coachId,
+          personId: { $in: playerIds }
+        }).select("personId");
+
+        const assignedPlayerIds = assignedPlayers.map(ap => ap.personId.toString());
+        const invalidPlayers = playerIds.filter(id => !assignedPlayerIds.includes(id.toString()));
+        
+        if (invalidPlayers.length > 0) {
+          return res.status(400).json({ 
+            message: "Some selected players are not assigned to you. Please select only players assigned to your coach account." 
+          });
+        }
+      }
+    }
 
     const team = new Team({
       teamName,

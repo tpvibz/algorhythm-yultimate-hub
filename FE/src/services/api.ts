@@ -113,8 +113,14 @@ export const authAPI = {
   },
 
   // Approve player request
-  approvePlayer: async (requestId: string) => {
-    const response = await api.post('/auth/approve/player', { requestId });
+  approvePlayer: async (requestId: string, coachId?: string) => {
+    const response = await api.post('/auth/approve/player', { requestId, coachId });
+    return response.data;
+  },
+
+  // Get active coaches
+  getActiveCoaches: async () => {
+    const response = await api.get('/auth/coaches/active');
     return response.data;
   },
 

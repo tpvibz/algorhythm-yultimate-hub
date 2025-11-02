@@ -56,10 +56,10 @@ const AdminDashboard = () => {
     }
   };
 
-  const handleApprove = async (id: string | number, type: 'account' | 'volunteer' = 'account') => {
+  const handleApprove = async (id: string | number, coachId?: string, type: 'account' | 'volunteer' = 'account') => {
     try {
       if (type === 'account') {
-        await authAPI.approvePlayer(id.toString());
+        await authAPI.approvePlayer(id.toString(), coachId);
         toast.success('Player approved successfully!');
         fetchPendingRequests();
       } else {

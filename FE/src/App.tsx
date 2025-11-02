@@ -12,7 +12,7 @@ import Register from "./pages/Register";
 import AdminDashboard from "./pages/AdminDashboard";
 import CoachDashboard from "./pages/CoachDashboard";
 import VolunteerDashboard from "./pages/VolunteerDashboard";
-import PlayerDashboard from "./pages/PlayerDashboard";
+import PlayerDashboard from "./pages/PlayerDashboard/index";
 import Schedule from "./pages/Schedule";
 import PoolBracket from "./pages/PoolBracket";
 import Teams from "./pages/Teams";

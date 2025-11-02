@@ -4,6 +4,10 @@ import jwt from "jsonwebtoken";
 import Person from "../models/personModel.js";
 import RoleRequest from "../models/roleRequestModel.js";
 import CredentialPool from "../models/credentialPoolModel.js";
+import PlayerProfile from "../models/playerProfileModel.js";
+import CoachProfile from "../models/coachProfileModel.js";
+import Notification from "../models/notificationModel.js";
+import School from "../models/schoolModel.js";
 import sendMail from "../utils/sendMail.js";
 
 const JWT_SECRET = process.env.JWT_SECRET || "tamui_secret";
@@ -11,7 +15,7 @@ const JWT_SECRET = process.env.JWT_SECRET || "tamui_secret";
 /* 🧍 PLAYER / VOLUNTEER SIGNUP (with password set by user) */
 export const playerSignup = async (req, res) => {
   try {
-    const { firstName, lastName, email, phone, password, confirmPassword, role } = req.body;
+    const { firstName, lastName, email, phone, password, confirmPassword, role, age, gender, experience, affiliationType, affiliationId } = req.body;
 
     // Validation
     if (!firstName || !email || !phone || !password || !confirmPassword || !role) {
@@ -19,6 +23,33 @@ export const playerSignup = async (req, res) => {
     }
     if (password !== confirmPassword) {
       return res.status(400).json({ message: "Passwords do not match." });
+    }
+
+    // Player-specific validation
+    if (role === "player") {
+      if (!age || !gender || !experience) {
+        return res.status(400).json({ message: "Age, gender, and experience are required for players." });
+      }
+      if (typeof age !== "number" || age < 1 || age > 120) {
+        return res.status(400).json({ message: "Please enter a valid age." });
+      }
+      
+      // Affiliation validation for players
+      if (!affiliationType || !affiliationId) {
+        return res.status(400).json({ message: "Affiliation type and institution are required for players." });
+      }
+      if (!["school", "community"].includes(affiliationType)) {
+        return res.status(400).json({ message: "Invalid affiliation type. Must be 'school' or 'community'." });
+      }
+
+      // Validate institution exists
+      const institution = await School.findById(affiliationId);
+      if (!institution) {
+        return res.status(400).json({ message: "Selected institution not found." });
+      }
+      if (institution.type !== affiliationType) {
+        return res.status(400).json({ message: "Institution type mismatch." });
+      }
     }
 
     // Check if already registered
@@ -31,9 +62,28 @@ export const playerSignup = async (req, res) => {
     // Hash password
     const passwordHash = await bcrypt.hash(password, 10);
 
+    // Prepare applicant info
+    const applicantInfo = { firstName, lastName, email, phone };
+    
+    // Add player-specific fields if role is player
+    if (role === "player") {
+      applicantInfo.age = age;
+      applicantInfo.gender = gender;
+      applicantInfo.experience = experience;
+      
+      // Get institution details for affiliation
+      const institution = await School.findById(affiliationId);
+      applicantInfo.affiliation = {
+        type: affiliationType,
+        id: affiliationId,
+        name: institution.name,
+        location: institution.location,
+      };
+    }
+
     // Create pending request for admin approval
     const newRequest = new RoleRequest({
-      applicantInfo: { firstName, lastName, email, phone },
+      applicantInfo,
       requestedRole: role,
       passwordHash,
     });
@@ -51,10 +101,48 @@ export const playerSignup = async (req, res) => {
 /* 🧑‍💼 ADMIN APPROVES PLAYER / VOLUNTEER */
 export const approvePlayer = async (req, res) => {
   try {
-    const { requestId } = req.body;
+    const { requestId, coachId } = req.body;
 
     const request = await RoleRequest.findById(requestId);
     if (!request) return res.status(404).json({ message: "Request not found" });
+
+    let finalCoachId = coachId;
+
+    // Auto-link coach based on affiliation if coachId not provided and player has affiliation
+    if (request.requestedRole === "player" && !coachId && request.applicantInfo.affiliation) {
+      const { type, id: affiliationId } = request.applicantInfo.affiliation;
+      
+      // Find coaches linked to the same institution
+      const institution = await School.findById(affiliationId);
+      if (institution && institution.coachIds.length > 0) {
+        // Get coaches with matching affiliation
+        const coachProfiles = await CoachProfile.find({
+          "affiliation.id": affiliationId,
+          "affiliation.type": type,
+        }).populate("personId");
+
+        // Prefer coaches already linked to institution
+        const preferredCoaches = coachProfiles.filter((cp) =>
+          institution.coachIds.some((cid) => cid.toString() === cp.personId._id.toString())
+        );
+
+        if (preferredCoaches.length > 0) {
+          // Use first coach from preferred list
+          finalCoachId = preferredCoaches[0].personId._id;
+        } else if (coachProfiles.length > 0) {
+          // Fallback to any coach with matching affiliation
+          finalCoachId = coachProfiles[0].personId._id;
+        }
+      }
+    }
+
+    // Validate coach if role is player and coach is selected
+    if (request.requestedRole === "player" && finalCoachId) {
+      const coach = await Person.findById(finalCoachId);
+      if (!coach || !coach.roles.includes("coach")) {
+        return res.status(400).json({ message: "Invalid coach selected." });
+      }
+    }
 
     // Generate unique code
     const uniqueUserId = `${request.requestedRole.substring(0, 3).toUpperCase()}-${Date.now()}`;
@@ -70,6 +158,54 @@ export const approvePlayer = async (req, res) => {
       roles: [request.requestedRole],
     });
     await newPerson.save();
+
+    // Create PlayerProfile if role is player
+    if (request.requestedRole === "player") {
+      const profileData = {
+        personId: newPerson._id,
+        age: request.applicantInfo.age,
+        gender: request.applicantInfo.gender,
+        experience: request.applicantInfo.experience,
+        assignedCoachId: finalCoachId || undefined,
+      };
+
+      // Add affiliation if present
+      if (request.applicantInfo.affiliation) {
+        profileData.affiliation = request.applicantInfo.affiliation;
+      }
+
+      await PlayerProfile.create(profileData);
+
+      // Add coach to institution's coachIds if not already there
+      if (finalCoachId && request.applicantInfo.affiliation) {
+        const institution = await School.findById(request.applicantInfo.affiliation.id);
+        if (institution && !institution.coachIds.includes(finalCoachId)) {
+          institution.coachIds.push(finalCoachId);
+          await institution.save();
+        }
+      }
+
+      // Create notification for coach if assigned
+      if (finalCoachId) {
+        const coach = await Person.findById(finalCoachId);
+        if (coach) {
+          await Notification.create({
+            recipient: coach.email,
+            messageType: "playerAssigned",
+            messageBody: `A new player ${request.applicantInfo.firstName} ${request.applicantInfo.lastName} has been assigned to you.`,
+            sentAt: new Date(),
+            status: "sent",
+          });
+
+          // Also send email notification
+          await sendMail(
+            coach.email,
+            "New Player Assigned",
+            `A new player has been assigned to you:\n\nPlayer Name: ${request.applicantInfo.firstName} ${request.applicantInfo.lastName}\nAge: ${request.applicantInfo.age}\nExperience: ${request.applicantInfo.experience}\nAffiliation: ${request.applicantInfo.affiliation?.name || "N/A"}\n\nPlease check your dashboard for details.`
+          );
+        }
+      }
+    }
 
     // Update request
     request.status = "approved";
@@ -194,5 +330,20 @@ export const rejectRequest = async (req, res) => {
     res.status(200).json({ message: "Request rejected successfully." });
   } catch (error) {
     res.status(500).json({ message: "Rejection failed", error: error.message });
+  }
+};
+
+/* 👨‍🏫 GET ACTIVE COACHES */
+export const getActiveCoaches = async (req, res) => {
+  try {
+    const coaches = await Person.find({
+      roles: { $in: ["coach"] },
+      accountStatus: "active"
+    }).select("firstName lastName email uniqueUserId _id");
+
+    res.status(200).json(coaches);
+  } catch (error) {
+    console.error("Get coaches error:", error);
+    res.status(500).json({ message: "Failed to fetch coaches", error: error.message });
   }
 };

@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Users, Calendar, BookOpen, BarChart3 } from "lucide-react";
+import { Users, Calendar, BookOpen, BarChart3, GraduationCap, ClipboardCheck } from "lucide-react";
 import CoachNavbar from "@/components/CoachNavbar";
 import BottomNav from "@/components/BottomNav";
 import CoachNotifications from "@/components/CoachNotifications";
@@ -8,6 +8,8 @@ import OverviewTab from "./OverviewTab";
 import UpcomingSessionsTab from "./UpcomingSessionsTab";
 import QuickActionsTab from "./QuickActionsTab";
 import SessionsTab from "./SessionsTab";
+import StudentsTab from "./StudentsTab";
+import AttendanceTab from "./AttendanceTab";
 
 const CoachDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
@@ -73,7 +75,9 @@ const CoachDashboard = () => {
           {/* Navigation Tabs */}
           <div className="flex flex-wrap gap-3 mb-8">
             <TabButton id="overview" label="Overview" icon={BarChart3} />
+            <TabButton id="students" label="My Students" icon={GraduationCap} />
             <TabButton id="sessions" label="Sessions" icon={Calendar} />
+            <TabButton id="attendance" label="Attendance" icon={ClipboardCheck} />
             <TabButton id="actions" label="Quick Actions" icon={BookOpen} />
           </div>
 
@@ -88,9 +92,19 @@ const CoachDashboard = () => {
                 <QuickActionsTab />
               </>
             )}
+            {activeTab === "students" && (
+              <div className="lg:col-span-2">
+                <StudentsTab />
+              </div>
+            )}
             {activeTab === "sessions" && (
               <div className="lg:col-span-2">
                 <SessionsTab />
+              </div>
+            )}
+            {activeTab === "attendance" && (
+              <div className="lg:col-span-2">
+                <AttendanceTab />
               </div>
             )}
             {activeTab === "actions" && (
