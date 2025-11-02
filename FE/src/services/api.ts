@@ -166,6 +166,13 @@ export interface Match {
     teamB: number;
   };
   winnerTeamId?: string;
+  round?: number;
+  roundName?: string;
+  bracketPosition?: number;
+  matchNumber?: number;
+  pool?: number;
+  parentMatchAId?: string;
+  parentMatchBId?: string;
 }
 
 export interface MatchesResponse {
@@ -911,6 +918,259 @@ export const authAPI = {
   // Reject player request
   rejectPlayer: async (requestId: string) => {
     const response = await api.post('/auth/reject/player', { requestId });
+    return response.data;
+  },
+};
+
+// Feedback interfaces
+export interface MatchNeedingFeedback {
+  matchId: string;
+  matchNumber?: number;
+  roundName?: string;
+  startTime: string;
+  fieldName?: string;
+  tournament: {
+    _id: string;
+    name: string;
+    startDate: string;
+    endDate: string;
+    location: string;
+  } | null;
+  team: {
+    _id: string;
+    teamName: string;
+  };
+  opponentTeam: {
+    _id: string;
+    teamName: string;
+  } | null;
+  spiritScoreSubmitted: boolean;
+  playerFeedbackSubmitted: boolean;
+  playersNeedingFeedback: number;
+  totalPlayersAttended: number;
+  score: {
+    teamA: number;
+    teamB: number;
+  } | null;
+}
+
+export interface MatchesNeedingFeedbackResponse {
+  success: boolean;
+  data: {
+    matches: MatchNeedingFeedback[];
+    count: number;
+  };
+}
+
+// Legacy interface for backward compatibility
+export interface TournamentNeedingFeedback {
+  tournament: {
+    _id: string;
+    name: string;
+    startDate: string;
+    endDate: string;
+    location: string;
+  };
+  team: {
+    _id: string;
+    teamName: string;
+  };
+  matchesNeedingFeedback: Array<{
+    matchId: string;
+    opponentTeam: {
+      _id: string;
+      teamName: string;
+    } | null;
+    spiritScoreSubmitted: boolean;
+    playerFeedbackSubmitted: boolean;
+    matchNumber?: number;
+    roundName?: string;
+  }>;
+  totalMatches: number;
+  completedMatches: number;
+}
+
+export interface TournamentNeedingFeedbackResponse {
+  success: boolean;
+  data: {
+    tournaments: TournamentNeedingFeedback[];
+    count: number;
+  };
+}
+
+export interface MatchFeedbackDetail {
+  matchId: string;
+  opponentTeam: {
+    _id: string;
+    teamName: string;
+  } | null;
+  matchNumber?: number;
+  roundName?: string;
+  startTime: string;
+  spiritScore: {
+    categories: {
+      rulesKnowledge: number;
+      foulsContact: number;
+      fairMindedness: number;
+      positiveAttitude: number;
+      communication: number;
+    };
+    comments: string;
+    submittedAt: string;
+  } | null;
+  players: Array<{
+    playerId: string;
+    playerName: string;
+    feedback: {
+      score: string;
+      feedback: string;
+      submittedAt: string;
+    } | null;
+  }>;
+  spiritScoreSubmitted: boolean;
+  allPlayerFeedbackSubmitted: boolean;
+}
+
+export interface TournamentFeedbackDetailsResponse {
+  success: boolean;
+  data: {
+    tournament: {
+      _id: string;
+      name: string;
+      startDate: string;
+      endDate: string;
+      location: string;
+    };
+    team: {
+      _id: string;
+      teamName: string;
+    };
+    matches: MatchFeedbackDetail[];
+  };
+}
+
+export interface PlayerForFeedback {
+  playerId: string;
+  firstName: string;
+  lastName: string;
+  name: string;
+  email: string;
+  feedbackSubmitted: boolean;
+  feedback: {
+    score: string;
+    feedback: string;
+  } | null;
+}
+
+export interface MatchPlayersForFeedbackResponse {
+  success: boolean;
+  data: {
+    match: {
+      _id: string;
+      matchNumber?: number;
+      roundName?: string;
+    };
+    team: {
+      _id: string;
+      teamName: string;
+    };
+    players: PlayerForFeedback[];
+  };
+}
+
+export interface FeedbackCompletionStatusResponse {
+  success: boolean;
+  data: {
+    canRegister: boolean;
+    incompleteMatches: Array<{
+      matchId: string;
+      tournamentName: string;
+      matchDate: string;
+      teamName: string;
+      opponentTeam: string;
+      missingType: 'spirit_score' | 'player_feedback';
+    }>;
+  };
+}
+
+// Feedback API functions
+export const feedbackAPI = {
+  // Get matches needing feedback (after each match completion)
+  getMatchesNeedingFeedback: async (coachId: string): Promise<MatchesNeedingFeedbackResponse> => {
+    const response = await api.get('/feedback/matches/needing-feedback', {
+      params: { coachId }
+    });
+    return response.data;
+  },
+
+  // Get tournaments needing feedback (backward compatibility)
+  getTournamentsNeedingFeedback: async (coachId: string): Promise<TournamentNeedingFeedbackResponse> => {
+    const response = await api.get('/feedback/tournaments/needing-feedback', {
+      params: { coachId }
+    });
+    return response.data;
+  },
+
+  // Get tournament feedback details
+  getTournamentFeedbackDetails: async (
+    tournamentId: string,
+    coachId: string
+  ): Promise<TournamentFeedbackDetailsResponse> => {
+    const response = await api.get(`/feedback/tournaments/${tournamentId}/details`, {
+      params: { coachId }
+    });
+    return response.data;
+  },
+
+  // Submit spirit score for a match
+  submitSpiritScore: async (
+    matchId: string,
+    data: {
+      categories: {
+        rulesKnowledge: number;
+        foulsContact: number;
+        fairMindedness: number;
+        positiveAttitude: number;
+        communication: number;
+      };
+      comments?: string;
+      coachId: string;
+    }
+  ): Promise<{ success: boolean; message: string; data: { spiritScore: any } }> => {
+    const response = await api.post(`/feedback/matches/${matchId}/spirit-score`, data);
+    return response.data;
+  },
+
+  // Submit player feedback for a match
+  submitPlayerFeedback: async (
+    matchId: string,
+    playerId: string,
+    data: {
+      score: string;
+      feedback: string;
+      coachId: string;
+    }
+  ): Promise<{ success: boolean; message: string; data: { feedback: any } }> => {
+    const response = await api.post(`/feedback/matches/${matchId}/players/${playerId}/feedback`, data);
+    return response.data;
+  },
+
+  // Get players for a match who need feedback
+  getMatchPlayersForFeedback: async (
+    matchId: string,
+    coachId: string
+  ): Promise<MatchPlayersForFeedbackResponse> => {
+    const response = await api.get(`/feedback/matches/${matchId}/players`, {
+      params: { coachId }
+    });
+    return response.data;
+  },
+
+  // Check feedback completion status
+  checkFeedbackCompletionStatus: async (coachId: string): Promise<FeedbackCompletionStatusResponse> => {
+    const response = await api.get('/feedback/check-completion', {
+      params: { coachId }
+    });
     return response.data;
   },
 };

@@ -13,6 +13,7 @@ import AchievementsSection from "./AchievementsSection";
 import TransferSection from "./TransferSection";
 import MatchesSection from "./MatchesSection";
 import StatsCards from "./StatsCards";
+import FeedbackSection from "./FeedbackSection";
 
 const PlayerDashboard = () => {
   const [playerId, setPlayerId] = useState<string | null>(null);
@@ -124,11 +125,12 @@ const PlayerDashboard = () => {
 
           {/* Tabs Navigation */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-8">
-            <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 mb-6">
+            <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 mb-6">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="attendance">📊 Attendance</TabsTrigger>
               <TabsTrigger value="home-visits">🏠 Home Visits</TabsTrigger>
               <TabsTrigger value="achievements">🏆 Achievements</TabsTrigger>
+              <TabsTrigger value="feedback">💬 Feedback</TabsTrigger>
               <TabsTrigger value="transfers">🔁 Transfers</TabsTrigger>
             </TabsList>
 
@@ -149,6 +151,10 @@ const PlayerDashboard = () => {
 
             <TabsContent value="achievements">
               <AchievementsSection playerId={playerId} fullWidth />
+            </TabsContent>
+
+            <TabsContent value="feedback">
+              <FeedbackSection playerId={playerId} />
             </TabsContent>
 
             <TabsContent value="transfers">

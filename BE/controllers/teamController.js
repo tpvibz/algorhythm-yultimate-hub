@@ -3,6 +3,10 @@ import Person from "../models/personModel.js";
 import PlayerProfile from "../models/playerProfileModel.js";
 import Match from "../models/matchModel.js";
 import TeamRoster from "../models/teamRosterModel.js";
+import Tournament from "../models/tournamentModel.js";
+import SpiritSubmission from "../models/spiritSubmissionModel.js";
+import PlayerMatchFeedback from "../models/playerMatchFeedbackModel.js";
+import MatchAttendance from "../models/matchAttendanceModel.js";
 
 // Create a new team (coach registers on behalf of a team)
 export const createTeam = async (req, res) => {
@@ -29,6 +33,72 @@ export const createTeam = async (req, res) => {
     // Optionally verify coach exists
     const coach = await Person.findById(coachId);
     if (!coach) return res.status(404).json({ message: "Coach not found" });
+
+    // Check if coach has incomplete feedback for any completed matches (not just tournaments)
+    const teams = await Team.find({ coachId });
+    if (teams.length > 0) {
+      const teamIds = teams.map(t => t._id);
+      
+      // Get all completed matches for this coach's teams (regardless of tournament status)
+      const completedMatches = await Match.find({
+        $or: [
+          { teamAId: { $in: teamIds } },
+          { teamBId: { $in: teamIds } }
+        ],
+        status: 'completed'
+      })
+        .populate('tournamentId', 'name')
+        .sort({ startTime: -1 });
+
+      // Check each completed match for incomplete feedback
+      for (const match of completedMatches) {
+        // Determine which team belongs to this coach
+        // Handle both populated and non-populated team references
+        const teamAIdStr = (match.teamAId?._id || match.teamAId)?.toString();
+        const teamBIdStr = (match.teamBId?._id || match.teamBId)?.toString();
+        
+        const coachTeam = teams.find(t => 
+          t._id.toString() === teamAIdStr || t._id.toString() === teamBIdStr
+        );
+
+        if (!coachTeam) continue;
+
+        // Check spirit score
+        const spiritScore = await SpiritSubmission.findOne({
+          matchId: match._id,
+          submittedByTeamId: coachTeam._id
+        });
+
+        if (!spiritScore) {
+          const tournamentName = match.tournamentId?.name || 'a match';
+          return res.status(403).json({
+            message: `You must submit feedback after each completed match. Please submit spirit score for the match in "${tournamentName}" before registering for a new tournament.`
+          });
+        }
+
+        // Check player feedback
+        const playersAttended = await MatchAttendance.find({
+          matchId: match._id,
+          teamId: coachTeam._id,
+          status: 'present'
+        });
+
+        for (const attendance of playersAttended) {
+          const feedback = await PlayerMatchFeedback.findOne({
+            matchId: match._id,
+            playerId: attendance.playerId,
+            coachId: coachId
+          });
+
+          if (!feedback) {
+            const tournamentName = match.tournamentId?.name || 'a match';
+            return res.status(403).json({
+              message: `You must submit feedback after each completed match. Please submit player feedback for all players who participated in the match from "${tournamentName}" before registering for a new tournament.`
+            });
+          }
+        }
+      }
+    }
 
     // Validate that all players are assigned to this coach
     if (players && Array.isArray(players) && players.length > 0) {

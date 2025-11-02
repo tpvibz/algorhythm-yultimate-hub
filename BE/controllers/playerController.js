@@ -7,6 +7,7 @@ import Match from "../models/matchModel.js";
 import Team from "../models/teamModel.js";
 import Tournament from "../models/tournamentModel.js";
 import School from "../models/schoolModel.js";
+import PlayerMatchFeedback from "../models/playerMatchFeedbackModel.js";
 
 // Get player profile with all details
 export const getPlayerProfile = async (req, res) => {
@@ -354,6 +355,99 @@ export const getTransferHistory = async (req, res) => {
   } catch (error) {
     console.error("Get transfer history error:", error);
     res.status(500).json({ message: "Failed to fetch transfer history", error: error.message });
+  }
+};
+
+// Get player feedback from coaches
+export const getPlayerFeedback = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const playerProfile = await PlayerProfile.findOne({ personId: id });
+    if (!playerProfile) {
+      return res.status(404).json({ message: "Player profile not found" });
+    }
+
+    // Get all match feedback for this player
+    const matchFeedback = await PlayerMatchFeedback.find({ playerId: id })
+      .populate("matchId", "startTime roundName matchNumber")
+      .populate("tournamentId", "name location startDate endDate")
+      .populate("coachId", "firstName lastName")
+      .populate("teamId", "teamName")
+      .sort({ submittedAt: -1 });
+
+    // Also get feedback from player profile (legacy feedback)
+    const profileFeedback = playerProfile.feedback || [];
+    const legacyFeedback = await Promise.all(
+      profileFeedback.map(async (fb) => {
+        const coach = await Person.findById(fb.coachId).select("firstName lastName");
+        return {
+          _id: fb._id || new mongoose.Types.ObjectId(),
+          coach: coach
+            ? {
+                _id: coach._id,
+                name: `${coach.firstName} ${coach.lastName}`,
+              }
+            : null,
+          score: fb.rating ? `${Math.round((fb.rating / 10) * 7)}/7` : null,
+          feedback: fb.comments,
+          date: fb.date,
+          matchId: fb.matchId || null,
+          source: "profile",
+        };
+      })
+    );
+
+    // Format match feedback
+    const formattedMatchFeedback = matchFeedback.map((fb) => ({
+      _id: fb._id,
+      coach: fb.coachId
+        ? {
+            _id: fb.coachId._id,
+            name: `${fb.coachId.firstName} ${fb.coachId.lastName}`,
+          }
+        : null,
+      score: fb.score,
+      feedback: fb.feedback,
+      date: fb.submittedAt,
+      match: fb.matchId
+        ? {
+            _id: fb.matchId._id,
+            roundName: fb.matchId.roundName,
+            matchNumber: fb.matchId.matchNumber,
+            startTime: fb.matchId.startTime,
+          }
+        : null,
+      tournament: fb.tournamentId
+        ? {
+            _id: fb.tournamentId._id,
+            name: fb.tournamentId.name,
+            location: fb.tournamentId.location,
+            startDate: fb.tournamentId.startDate,
+            endDate: fb.tournamentId.endDate,
+          }
+        : null,
+      team: fb.teamId
+        ? {
+            _id: fb.teamId._id,
+            teamName: fb.teamId.teamName,
+          }
+        : null,
+      source: "match",
+    }));
+
+    // Combine and sort by date
+    const allFeedback = [...formattedMatchFeedback, ...legacyFeedback].sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+
+    res.status(200).json({
+      feedback: allFeedback,
+      count: allFeedback.length,
+    });
+  } catch (error) {
+    console.error("Get player feedback error:", error);
+    res.status(500).json({ message: "Failed to fetch player feedback", error: error.message });
   }
 };
 

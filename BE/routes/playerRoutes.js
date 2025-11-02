@@ -8,6 +8,7 @@ import {
   getPlayerHomeVisits,
   requestTransfer,
   getTransferHistory,
+  getPlayerFeedback,
 } from "../controllers/playerController.js";
 
 const router = express.Router();
@@ -32,6 +33,9 @@ router.get("/:id/home-visits", getPlayerHomeVisits);
 
 // Get transfer history
 router.get("/:id/transfer-history", getTransferHistory);
+
+// Get player feedback
+router.get("/:id/feedback", getPlayerFeedback);
 
 // Request transfer
 router.post("/:id/transfer-request", requestTransfer);

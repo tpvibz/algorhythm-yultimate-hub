@@ -5,7 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Calendar, Clock, Users, Trophy, Trash2, RefreshCw, PlayCircle, CheckCircle2 } from "lucide-react";
+import { Calendar, Clock, Users, Trophy, Trash2, RefreshCw, PlayCircle, CheckCircle2, MapPin } from "lucide-react";
 import { tournamentAPI, scheduleAPI, Tournament, Team, Match, handleAPIError } from "@/services/api";
 
 const ScheduleBuilderTab = () => {
@@ -375,68 +375,145 @@ const ScheduleBuilderTab = () => {
         </Card>
       )}
 
-      {/* Matches List */}
+      {/* Matches List - Grouped by Rounds */}
       {selectedTournamentId && (
         <Card className="glass-card">
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Calendar className="h-5 w-5" />
-              Scheduled Matches ({matches.length})
+              Tournament Bracket ({matches.length} matches)
             </CardTitle>
           </CardHeader>
           <CardContent>
             {matchesLoading ? (
               <p className="text-sm text-muted-foreground">Loading matches...</p>
             ) : matches.length > 0 ? (
-              <div className="space-y-4">
-                {matches.map((match) => (
-                  <div
-                    key={match._id}
-                    className="p-4 rounded-lg bg-gradient-to-r from-blue-500/5 to-blue-600/5 border border-border hover:from-blue-500/10 hover:to-blue-600/10 transition-all"
-                  >
-                    <div className="flex justify-between items-start mb-3">
-                      <div className="flex-1">
-                        <div className="flex items-center gap-3 mb-2">
-                          <span className="font-semibold text-lg">{match.teamA.teamName}</span>
-                          <span className="text-muted-foreground">vs</span>
-                          <span className="font-semibold text-lg">{match.teamB.teamName}</span>
-                        </div>
-                        <div className="flex items-center gap-4 text-sm text-muted-foreground">
-                          <div className="flex items-center gap-1">
-                            <Clock className="h-3 w-3" />
-                            {formatDateTime(match.startTime)} - {formatTime(match.endTime)}
+              (() => {
+                // Group matches by round
+                const matchesByRound = matches.reduce((acc, match) => {
+                  const roundName = match.roundName || `Round ${match.round || 1}`;
+                  if (!acc[roundName]) {
+                    acc[roundName] = [];
+                  }
+                  acc[roundName].push(match);
+                  return acc;
+                }, {} as Record<string, Match[]>);
+
+                // Sort rounds by round number
+                const sortedRounds = Object.keys(matchesByRound).sort((a, b) => {
+                  const roundA = matches.find(m => m.roundName === a)?.round || 0;
+                  const roundB = matches.find(m => m.roundName === b)?.round || 0;
+                  return roundA - roundB;
+                });
+
+                return (
+                  <div className="space-y-8">
+                    {sortedRounds.map((roundName) => {
+                      const roundMatches = matchesByRound[roundName].sort((a, b) => {
+                        if (a.bracketPosition && b.bracketPosition) {
+                          return a.bracketPosition - b.bracketPosition;
+                        }
+                        if (a.matchNumber && b.matchNumber) {
+                          return a.matchNumber - b.matchNumber;
+                        }
+                        return new Date(a.startTime).getTime() - new Date(b.startTime).getTime();
+                      });
+
+                      const completedCount = roundMatches.filter(m => m.status === 'completed').length;
+                      const totalCount = roundMatches.length;
+
+                      return (
+                        <div key={roundName} className="space-y-4">
+                          <div className="flex items-center justify-between border-b border-border pb-2">
+                            <h3 className="text-xl font-bold text-primary flex items-center gap-2">
+                              <Trophy className="h-5 w-5" />
+                              {roundName}
+                            </h3>
+                            <span className="text-sm text-muted-foreground">
+                              {completedCount} / {totalCount} completed
+                            </span>
                           </div>
-                          {match.fieldName && (
-                            <span>Field: {match.fieldName}</span>
-                          )}
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                            {roundMatches.map((match) => (
+                              <div
+                                key={match._id}
+                                className={`p-4 rounded-lg border transition-all ${
+                                  match.status === 'completed'
+                                    ? 'bg-green-500/10 border-green-500/20'
+                                    : match.status === 'ongoing'
+                                    ? 'bg-yellow-500/10 border-yellow-500/20'
+                                    : 'bg-blue-500/5 border-border hover:bg-blue-500/10'
+                                }`}
+                              >
+                                <div className="flex items-center justify-between mb-3">
+                                  <span className="text-xs font-medium text-muted-foreground">
+                                    {match.matchNumber ? `Match ${match.matchNumber}` : match.bracketPosition ? `Position ${match.bracketPosition}` : ''}
+                                    {match.pool && ` • Pool ${match.pool}`}
+                                  </span>
+                                  <span className={`px-2 py-1 rounded text-xs font-semibold ${
+                                    match.status === "completed"
+                                      ? "bg-green-600 text-white"
+                                      : match.status === "ongoing"
+                                      ? "bg-yellow-600 text-white"
+                                      : "bg-blue-600 text-white"
+                                  }`}>
+                                    {match.status === "completed" ? (
+                                      <span className="flex items-center gap-1">
+                                        <CheckCircle2 className="h-3 w-3" />
+                                        Completed
+                                      </span>
+                                    ) : match.status === "ongoing" ? (
+                                      "Live"
+                                    ) : (
+                                      "Scheduled"
+                                    )}
+                                  </span>
+                                </div>
+                                
+                                <div className="space-y-2 mb-3">
+                                  <div className={`flex justify-between items-center p-2 rounded ${
+                                    match.winnerTeamId === match.teamA._id ? 'bg-green-500/20 font-bold' : 'bg-secondary/20'
+                                  }`}>
+                                    <span className="truncate">{match.teamA.teamName}</span>
+                                    <span className="font-bold ml-2">{match.score?.teamA || 0}</span>
+                                  </div>
+                                  <div className={`flex justify-between items-center p-2 rounded ${
+                                    match.winnerTeamId === match.teamB._id ? 'bg-green-500/20 font-bold' : 'bg-secondary/20'
+                                  }`}>
+                                    <span className="truncate">{match.teamB.teamName}</span>
+                                    <span className="font-bold ml-2">{match.score?.teamB || 0}</span>
+                                  </div>
+                                </div>
+
+                                <div className="flex items-center gap-3 text-xs text-muted-foreground">
+                                  <div className="flex items-center gap-1">
+                                    <Clock className="h-3 w-3" />
+                                    {formatDateTime(match.startTime)}
+                                  </div>
+                                  {match.fieldName && (
+                                    <span className="flex items-center gap-1">
+                                      <MapPin className="h-3 w-3" />
+                                      {match.fieldName}
+                                    </span>
+                                  )}
+                                </div>
+
+                                {match.status === 'completed' && match.winnerTeamId && (
+                                  <div className="mt-2 pt-2 border-t border-border">
+                                    <span className="text-xs font-semibold text-green-600">
+                                      Winner: {match.winnerTeamId === match.teamA._id ? match.teamA.teamName : match.teamB.teamName}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                      <div className="flex items-center gap-2">
-                        {match.status === "completed" ? (
-                          <span className="flex items-center gap-1 px-2 py-1 rounded bg-green-600 text-white text-xs">
-                            <CheckCircle2 className="h-3 w-3" />
-                            Completed
-                          </span>
-                        ) : match.status === "ongoing" ? (
-                          <span className="px-2 py-1 rounded bg-yellow-600 text-white text-xs">
-                            Ongoing
-                          </span>
-                        ) : (
-                          <span className="px-2 py-1 rounded bg-blue-600 text-white text-xs">
-                            Scheduled
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                    {match.score && (
-                      <div className="mt-2 text-sm">
-                        <span className="font-medium">Score: </span>
-                        <span>{match.score.teamA} - {match.score.teamB}</span>
-                      </div>
-                    )}
+                      );
+                    })}
                   </div>
-                ))}
-              </div>
+                );
+              })()
             ) : (
               <div className="text-center py-8">
                 <Calendar className="h-12 w-12 text-muted-foreground mx-auto mb-3" />

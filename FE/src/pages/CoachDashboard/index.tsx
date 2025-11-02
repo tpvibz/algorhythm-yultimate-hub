@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { Users, Calendar, BookOpen, BarChart3, GraduationCap, ClipboardCheck } from "lucide-react";
+import { Users, Calendar, BookOpen, BarChart3, GraduationCap, ClipboardCheck, MessageSquare } from "lucide-react";
 import CoachNavbar from "@/components/CoachNavbar";
 import BottomNav from "@/components/BottomNav";
 import CoachNotifications from "@/components/CoachNotifications";
@@ -10,6 +10,7 @@ import QuickActionsTab from "./QuickActionsTab";
 import SessionsTab from "./SessionsTab";
 import StudentsTab from "./StudentsTab";
 import AttendanceTab from "./AttendanceTab";
+import FeedbackTab from "./FeedbackTab";
 
 const CoachDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
@@ -78,6 +79,7 @@ const CoachDashboard = () => {
             <TabButton id="students" label="My Students" icon={GraduationCap} />
             <TabButton id="sessions" label="Sessions" icon={Calendar} />
             <TabButton id="attendance" label="Attendance" icon={ClipboardCheck} />
+            <TabButton id="feedback" label="Post-Tournament Feedback" icon={MessageSquare} />
             <TabButton id="actions" label="Quick Actions" icon={BookOpen} />
           </div>
 
@@ -105,6 +107,11 @@ const CoachDashboard = () => {
             {activeTab === "attendance" && (
               <div className="lg:col-span-2">
                 <AttendanceTab />
+              </div>
+            )}
+            {activeTab === "feedback" && (
+              <div className="lg:col-span-2">
+                <FeedbackTab />
               </div>
             )}
             {activeTab === "actions" && (

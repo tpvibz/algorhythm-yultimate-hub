@@ -22,6 +22,7 @@ import matchAttendanceRoutes from "./routes/matchAttendanceRoutes.js";
 import studentRoutes from "./routes/studentRoutes.js";
 import institutionRoutes from "./routes/institutionRoutes.js";
 import playerRoutes from "./routes/playerRoutes.js";
+import feedbackRoutes from "./routes/feedbackRoutes.js";
 
 // ✅ Fix for __dirname and __filename in ES Modules
 const __filename = fileURLToPath(import.meta.url);
@@ -55,6 +56,7 @@ app.use("/api/match-attendance", matchAttendanceRoutes);
 app.use("/api/students", studentRoutes);
 app.use("/api/institutions", institutionRoutes);
 app.use("/api/player", playerRoutes);
+app.use("/api/feedback", feedbackRoutes);
 
 // ✅ Serve uploaded files statically
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
