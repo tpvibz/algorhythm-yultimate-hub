@@ -313,9 +313,9 @@ export const submitSpiritScore = async (req, res) => {
       ? match.teamBId
       : match.teamAId;
 
-    // Validate categories
+    // Validate categories (require all, allow 0 values)
     const requiredCategories = ['rulesKnowledge', 'foulsContact', 'fairMindedness', 'positiveAttitude', 'communication'];
-    const missingCategories = requiredCategories.filter(cat => !categories || !categories[cat]);
+    const missingCategories = requiredCategories.filter(cat => !(categories && Object.prototype.hasOwnProperty.call(categories, cat)));
     
     if (missingCategories.length > 0) {
       return res.status(400).json({
@@ -324,12 +324,12 @@ export const submitSpiritScore = async (req, res) => {
       });
     }
 
-    // Validate category scores (typically 0-10 or 1-5)
+    // Validate category scores (0–4 inclusive)
     for (const [key, value] of Object.entries(categories)) {
-      if (value < 0 || value > 10) {
+      if (typeof value !== 'number' || Number.isNaN(value) || value < 0 || value > 4) {
         return res.status(400).json({
           success: false,
-          message: `Category ${key} must be between 0 and 10`
+          message: `Category ${key} must be a number between 0 and 4`
         });
       }
     }
@@ -726,6 +726,180 @@ export const checkFeedbackCompletionStatus = async (req, res) => {
     res.status(500).json({
       success: false,
       message: "Failed to check feedback completion status",
+      error: error.message
+    });
+  }
+};
+
+// Get spirit scores given and received for a coach's teams
+export const getCoachSpiritScores = async (req, res) => {
+  try {
+    const coachId = req.user ? req.user.id : req.query.coachId;
+    const { tournamentId, matchId } = req.query;
+
+    if (!coachId) {
+      return res.status(400).json({
+        success: false,
+        message: "Coach ID is required"
+      });
+    }
+
+    // Get teams for coach (optionally within a tournament)
+    const teamFilter = tournamentId ? { coachId, tournamentId } : { coachId };
+    const teams = await Team.find(teamFilter).select('_id teamName');
+    const teamIds = teams.map(t => t._id);
+
+    if (teamIds.length === 0) {
+      return res.status(200).json({ success: true, data: { scores: [], count: 0 } });
+    }
+
+    // Build submission filters
+    const baseFilter = {};
+    if (matchId) baseFilter.matchId = matchId;
+
+    // Find submissions GIVEN by coach teams
+    const givenSubmissions = await SpiritSubmission.find({
+      ...baseFilter,
+      submittedByTeamId: { $in: teamIds }
+    })
+      .populate('matchId', 'startTime roundName matchNumber tournamentId teamAId teamBId status')
+      .populate('forOpponentTeamId', 'teamName')
+      .lean();
+
+    // Find submissions RECEIVED for coach teams
+    const receivedSubmissions = await SpiritSubmission.find({
+      ...baseFilter,
+      forOpponentTeamId: { $in: teamIds }
+    })
+      .populate('matchId', 'startTime roundName matchNumber tournamentId teamAId teamBId status')
+      .populate('submittedByTeamId', 'teamName')
+      .lean();
+
+    // Normalize output
+    const scores = [
+      ...givenSubmissions.map(s => ({
+        type: 'given',
+        matchId: s.matchId?._id || s.matchId,
+        match: s.matchId || null,
+        opponentTeam: s.forOpponentTeamId || null,
+        categories: s.categories,
+        total: (s.categories?.rulesKnowledge || 0)
+          + (s.categories?.foulsContact || 0)
+          + (s.categories?.fairMindedness || 0)
+          + (s.categories?.positiveAttitude || 0)
+          + (s.categories?.communication || 0),
+        comments: s.comments || '',
+        submittedAt: s.submittedAt
+      })),
+      ...receivedSubmissions.map(s => ({
+        type: 'received',
+        matchId: s.matchId?._id || s.matchId,
+        match: s.matchId || null,
+        opponentTeam: s.submittedByTeamId || null,
+        categories: s.categories,
+        total: (s.categories?.rulesKnowledge || 0)
+          + (s.categories?.foulsContact || 0)
+          + (s.categories?.fairMindedness || 0)
+          + (s.categories?.positiveAttitude || 0)
+          + (s.categories?.communication || 0),
+        comments: s.comments || '',
+        submittedAt: s.submittedAt
+      }))
+    ]
+      .sort((a, b) => new Date(b.submittedAt).getTime() - new Date(a.submittedAt).getTime());
+
+    return res.status(200).json({
+      success: true,
+      data: { scores, count: scores.length }
+    });
+  } catch (error) {
+    console.error("Get coach spirit scores error:", error);
+    res.status(500).json({
+      success: false,
+      message: "Failed to fetch spirit scores",
+      error: error.message
+    });
+  }
+};
+
+// Get tournament spirit leaderboard (separate from performance scores)
+export const getTournamentSpiritLeaderboard = async (req, res) => {
+  try {
+    const { tournamentId } = req.params;
+    if (!tournamentId) {
+      return res.status(400).json({ success: false, message: 'Tournament ID is required' });
+    }
+
+    const teams = await Team.find({ tournamentId: tournamentId.toString() });
+    const teamIds = teams.map(t => t._id);
+
+    const matches = await Match.find({
+      tournamentId,
+      $or: [
+        { teamAId: { $in: teamIds } },
+        { teamBId: { $in: teamIds } }
+      ]
+    });
+
+    const spiritSubmissions = await SpiritSubmission.find({
+      matchId: { $in: matches.map(m => m._id) }
+    });
+
+    const spiritScores = {};
+    spiritSubmissions.forEach(submission => {
+      const opponentTeamId = submission.forOpponentTeamId.toString();
+      if (!spiritScores[opponentTeamId]) {
+        spiritScores[opponentTeamId] = {
+          teamId: opponentTeamId,
+          totalScore: 0,
+          count: 0,
+          categories: {
+            rulesKnowledge: [],
+            foulsContact: [],
+            fairMindedness: [],
+            positiveAttitude: [],
+            communication: []
+          }
+        };
+      }
+      const c = submission.categories || {};
+      const total = (c.rulesKnowledge || 0) + (c.foulsContact || 0) + (c.fairMindedness || 0) + (c.positiveAttitude || 0) + (c.communication || 0);
+      spiritScores[opponentTeamId].totalScore += total;
+      spiritScores[opponentTeamId].count += 1;
+      spiritScores[opponentTeamId].categories.rulesKnowledge.push(c.rulesKnowledge || 0);
+      spiritScores[opponentTeamId].categories.foulsContact.push(c.foulsContact || 0);
+      spiritScores[opponentTeamId].categories.fairMindedness.push(c.fairMindedness || 0);
+      spiritScores[opponentTeamId].categories.positiveAttitude.push(c.positiveAttitude || 0);
+      spiritScores[opponentTeamId].categories.communication.push(c.communication || 0);
+    });
+
+    const leaderboard = Object.values(spiritScores).map(score => {
+      const categoryAverages = {
+        rulesKnowledge: score.categories.rulesKnowledge.length ? score.categories.rulesKnowledge.reduce((a,b)=>a+b,0)/score.categories.rulesKnowledge.length : 0,
+        foulsContact: score.categories.foulsContact.length ? score.categories.foulsContact.reduce((a,b)=>a+b,0)/score.categories.foulsContact.length : 0,
+        fairMindedness: score.categories.fairMindedness.length ? score.categories.fairMindedness.reduce((a,b)=>a+b,0)/score.categories.fairMindedness.length : 0,
+        positiveAttitude: score.categories.positiveAttitude.length ? score.categories.positiveAttitude.reduce((a,b)=>a+b,0)/score.categories.positiveAttitude.length : 0,
+        communication: score.categories.communication.length ? score.categories.communication.reduce((a,b)=>a+b,0)/score.categories.communication.length : 0,
+      };
+      const team = teams.find(t => t._id.toString() === score.teamId);
+      return {
+        teamId: score.teamId,
+        teamName: team ? team.teamName : 'Unknown',
+        averageTotal: score.count ? Math.round((score.totalScore / score.count) * 100) / 100 : 0, // 0–20
+        categoryAverages,
+        submissionCount: score.count
+      };
+    }).sort((a, b) => b.averageTotal - a.averageTotal);
+
+    return res.status(200).json({
+      success: true,
+      data: { leaderboard, count: leaderboard.length }
+    });
+  } catch (error) {
+    console.error('Get tournament spirit leaderboard error:', error);
+    res.status(500).json({
+      success: false,
+      message: 'Failed to fetch spirit leaderboard',
       error: error.message
     });
   }

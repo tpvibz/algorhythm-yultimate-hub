@@ -18,11 +18,11 @@ interface SpiritScoreFormProps {
 const SpiritScoreForm = ({ matchId, onSuccess, onCancel }: SpiritScoreFormProps) => {
   const [loading, setLoading] = useState(false);
   const [categories, setCategories] = useState({
-    rulesKnowledge: 5,
-    foulsContact: 5,
-    fairMindedness: 5,
-    positiveAttitude: 5,
-    communication: 5,
+    rulesKnowledge: 2,
+    foulsContact: 2,
+    fairMindedness: 2,
+    positiveAttitude: 2,
+    communication: 2,
   });
   const [comments, setComments] = useState("");
   const coachId = localStorage.getItem("userId");
@@ -42,8 +42,8 @@ const SpiritScoreForm = ({ matchId, onSuccess, onCancel }: SpiritScoreFormProps)
       return;
     }
 
-    // Validate all categories are set
-    const allSet = Object.values(categories).every((val) => val >= 0 && val <= 10);
+    // Validate all categories are set within 0–4
+    const allSet = Object.values(categories).every((val) => val >= 0 && val <= 4);
     if (!allSet) {
       toast.error("Please set all category scores");
       return;
@@ -105,20 +105,20 @@ const SpiritScoreForm = ({ matchId, onSuccess, onCancel }: SpiritScoreFormProps)
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center justify-between">
-                <Label className="text-sm font-normal">Score: {value}/10</Label>
+                <Label className="text-sm font-normal">Score: {value}/4</Label>
                 <span className="text-xs text-muted-foreground">
-                  {value === 0 && "Poor"}
-                  {value > 0 && value < 3 && "Fair"}
-                  {value >= 3 && value < 7 && "Good"}
-                  {value >= 7 && value < 9 && "Very Good"}
-                  {value >= 9 && "Excellent"}
+                  {value === 0 && "Very Poor"}
+                  {value === 1 && "Poor"}
+                  {value === 2 && "Good / Standard"}
+                  {value === 3 && "Very Good"}
+                  {value === 4 && "Excellent"}
                 </span>
               </div>
               <Slider
                 value={[value]}
                 onValueChange={(val) => handleCategoryChange(key, val)}
                 min={0}
-                max={10}
+                max={4}
                 step={1}
                 className="w-full"
               />

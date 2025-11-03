@@ -1201,6 +1201,39 @@ export const feedbackAPI = {
     });
     return response.data;
   },
+  // Get spirit scores (given and received) for coach's teams
+  getCoachSpiritScores: async (
+    coachId: string,
+    params?: { tournamentId?: string; matchId?: string }
+  ): Promise<{ success: boolean; data: { scores: Array<{
+    type: 'given' | 'received';
+    matchId: string;
+    match?: any;
+    opponentTeam?: { _id: string; teamName: string } | null;
+    categories: { rulesKnowledge: number; foulsContact: number; fairMindedness: number; positiveAttitude: number; communication: number };
+    total: number;
+    comments: string;
+    submittedAt: string;
+  }>; count: number } }> => {
+    const response = await api.get('/feedback/coach/spirit-scores', {
+      params: { coachId, ...params }
+    });
+    return response.data;
+  },
+
+  // Get spirit leaderboard for a tournament
+  getTournamentSpiritLeaderboard: async (
+    tournamentId: string
+  ): Promise<{ success: boolean; data: { leaderboard: Array<{
+    teamId: string;
+    teamName: string;
+    averageTotal: number; // 0–20
+    categoryAverages: { rulesKnowledge: number; foulsContact: number; fairMindedness: number; positiveAttitude: number; communication: number };
+    submissionCount: number;
+  }>; count: number } }> => {
+    const response = await api.get(`/feedback/tournaments/${tournamentId}/spirit-leaderboard`);
+    return response.data;
+  },
 };
 
 // Analytics interfaces
@@ -1374,3 +1407,91 @@ export const handleAPIError = (error: any): string => {
 };
 
 export default api;
+ 
+// Player Stats interfaces and API
+export interface PlayerRatings {
+  overall: number;
+  offense?: number;
+  defense?: number;
+  spirit?: number;
+  throws?: number;
+  cuts?: number;
+}
+
+export interface PlayerMatchStatItem {
+  _id: string;
+  matchId: { _id: string; startTime?: string; status?: string } | string;
+  tournamentId: { _id: string; name: string; startDate: string; endDate: string; location: string } | string;
+  teamId: { _id: string; teamName: string } | string;
+  playerId: { _id: string; firstName: string; lastName: string; email: string } | string;
+  ratings: PlayerRatings;
+  points?: number;
+  assists?: number;
+  blocks?: number;
+  remark?: string;
+  createdAt: string;
+}
+
+export const playerStatsAPI = {
+  // Volunteer submits stats for a completed match
+  submitMatchPlayerStats: async (
+    matchId: string,
+    data: {
+      volunteerId: string;
+      stats: Array<{ playerId: string; teamId: string; ratings: PlayerRatings; remark?: string }>;
+    }
+  ): Promise<{ success: boolean; message: string }> => {
+    const response = await api.post(`/player-stats/matches/${matchId}/stats`, data);
+    return response.data;
+  },
+
+  // Volunteer submits stats for a specific team in a completed match
+  submitTeamMatchPlayerStats: async (
+    matchId: string,
+    teamId: string,
+    data: {
+      volunteerId: string;
+      stats: Array<{ playerId: string; ratings: PlayerRatings; remark?: string; points?: number; assists?: number; blocks?: number }>;
+    }
+  ): Promise<{ success: boolean; message: string }> => {
+    const response = await api.post(`/player-stats/matches/${matchId}/teams/${teamId}/stats`, data);
+    return response.data;
+  },
+
+  // Coach views team stats for a match
+  getTeamMatchPlayerStats: async (
+    matchId: string,
+    teamId: string
+  ): Promise<{ success: boolean; data: { stats: PlayerMatchStatItem[] } }> => {
+    const response = await api.get(`/player-stats/matches/${matchId}/teams/${teamId}/stats`);
+    return response.data;
+  },
+
+  // Player views their stats (optionally by tournament)
+  getPlayerStats: async (
+    playerId: string,
+    tournamentId?: string
+  ): Promise<{ success: boolean; data: { stats: PlayerMatchStatItem[] } }> => {
+    const response = await api.get(`/player-stats/players/${playerId}/stats`, {
+      params: tournamentId ? { tournamentId } : {},
+    });
+    return response.data;
+  },
+};
+
+// AI Assistant API (merged)
+export const aiAPI = {
+  coachAssistant: async (payload: {
+    question: string;
+    context?: {
+      teamName?: string;
+      sessionGoals?: string[];
+      roster?: any[];
+      recentStats?: any;
+      language?: string;
+    };
+  }): Promise<{ success: boolean; data: { answer: string } }> => {
+    const response = await api.post('/ai/coach-assistant', payload, { timeout: 30000 });
+    return response.data;
+  },
+};

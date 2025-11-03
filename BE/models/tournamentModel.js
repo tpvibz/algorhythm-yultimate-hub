@@ -63,6 +63,15 @@ const tournamentSchema = new mongoose.Schema(
       type: String,
       default: null
     },
+    // Store image binary directly in MongoDB when provided
+    imageData: {
+      type: Buffer,
+      default: undefined
+    },
+    imageContentType: {
+      type: String,
+      default: undefined
+    },
     status: {
       type: String,
       enum: ['upcoming', 'live', 'completed', 'cancelled'],

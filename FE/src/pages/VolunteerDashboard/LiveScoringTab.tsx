@@ -19,6 +19,7 @@ import {
   AlertCircle
 } from "lucide-react";
 import { scoreAPI, scheduleAPI, matchAttendanceAPI, Match, handleAPIError } from "@/services/api";
+import { Link } from "react-router-dom";
 
 const LiveScoringTab = () => {
   const [matches, setMatches] = useState<Match[]>([]);
@@ -563,6 +564,22 @@ const LiveScoringTab = () => {
                         <CheckCircle2 className="h-4 w-4 mr-2" />
                         Complete Match
                       </Button>
+                    )}
+                    {selectedMatch.status === 'completed' && (
+                      <div className="flex flex-col md:flex-row gap-2 w-full">
+                        <Link
+                          to={`/volunteer/player-stats-entry?matchId=${selectedMatch._id}&teamId=${selectedMatch.teamA._id}`}
+                          className="flex-1"
+                        >
+                          <Button variant="outline" className="w-full">Player's stat update - {selectedMatch.teamA.teamName}</Button>
+                        </Link>
+                        <Link
+                          to={`/volunteer/player-stats-entry?matchId=${selectedMatch._id}&teamId=${selectedMatch.teamB._id}`}
+                          className="flex-1"
+                        >
+                          <Button variant="outline" className="w-full">Player's stat update - {selectedMatch.teamB.teamName}</Button>
+                        </Link>
+                      </div>
                     )}
                   </div>
 

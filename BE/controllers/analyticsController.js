@@ -95,14 +95,14 @@ export const getTournamentSummary = async (req, res) => {
           };
         }
         const categories = submission.categories;
-        const avgScore = (
+        const totalForMatch = (
           categories.rulesKnowledge +
           categories.foulsContact +
           categories.fairMindedness +
           categories.positiveAttitude +
           categories.communication
-        ) / 5;
-        spiritScores[opponentTeamId].totalScore += avgScore;
+        ); // 0–20 scale per match
+        spiritScores[opponentTeamId].totalScore += totalForMatch;
         spiritScores[opponentTeamId].count += 1;
         spiritScores[opponentTeamId].categories.rulesKnowledge.push(categories.rulesKnowledge);
         spiritScores[opponentTeamId].categories.foulsContact.push(categories.foulsContact);
@@ -113,7 +113,7 @@ export const getTournamentSummary = async (req, res) => {
 
       // Calculate average spirit scores
       const spiritRankings = Object.values(spiritScores).map(score => {
-        const avgScore = score.count > 0 ? score.totalScore / score.count : 0;
+        const avgScore = score.count > 0 ? score.totalScore / score.count : 0; // average total per game (0–20)
         const categoryAverages = {
           rulesKnowledge: score.categories.rulesKnowledge.length > 0
             ? score.categories.rulesKnowledge.reduce((a, b) => a + b, 0) / score.categories.rulesKnowledge.length

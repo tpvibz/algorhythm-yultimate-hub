@@ -11,6 +11,18 @@ export const translationMiddleware = async (req, res, next) => {
   // Override json method to translate response
   res.json = async function (data) {
     try {
+      // Skip translation endpoint itself to avoid double-translation
+      if (req.path && req.path.startsWith('/translate')) {
+        return originalJson(data);
+      }
+      // Opt-in only: require x-translate header or translate=true query
+      const shouldTranslate =
+        req.headers['x-translate'] === '1' ||
+        req.query.translate === 'true' ||
+        req.query.translate === '1';
+      if (!shouldTranslate) {
+        return originalJson(data);
+      }
       // Get target language from query param or header
       let targetLanguage = req.query.lang || req.headers['accept-language'];
       

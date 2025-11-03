@@ -17,6 +17,7 @@ import scoreRoutes from "./routes/scoreRoutes.js";
 import predictionRoutes from "./routes/predictionRoutes.js";
 import leaderboardRoutes from "./routes/leaderboardRoutes.js";
 import matchImageRoutes from "./routes/matchImageRoutes.js";
+import playerStatsRoutes from "./routes/playerStatsRoutes.js";
 import attendanceRoutes from "./routes/attendanceRoutes.js";
 import matchAttendanceRoutes from "./routes/matchAttendanceRoutes.js";
 import studentRoutes from "./routes/studentRoutes.js";
@@ -25,6 +26,8 @@ import playerRoutes from "./routes/playerRoutes.js";
 import feedbackRoutes from "./routes/feedbackRoutes.js";
 import analyticsRoutes from "./routes/analyticsRoutes.js";
 import translationMiddleware from "./middleware/translationMiddleware.js";
+import translateRoutes from "./routes/translateRoutes.js";
+import aiRoutes from "./routes/aiRoutes.js";
 
 // ✅ Fix for __dirname and __filename in ES Modules
 const __filename = fileURLToPath(import.meta.url);
@@ -56,6 +59,7 @@ app.use("/api/score", scoreRoutes);
 app.use("/api/predictions", predictionRoutes);
 app.use("/api/leaderboard", leaderboardRoutes);
 app.use("/api/match-images", matchImageRoutes);
+app.use("/api/player-stats", playerStatsRoutes);
 app.use("/api/attendance", attendanceRoutes);
 app.use("/api/match-attendance", matchAttendanceRoutes);
 app.use("/api/students", studentRoutes);
@@ -63,6 +67,8 @@ app.use("/api/institutions", institutionRoutes);
 app.use("/api/player", playerRoutes);
 app.use("/api/feedback", feedbackRoutes);
 app.use("/api/analytics", analyticsRoutes);
+app.use("/api/translate", translateRoutes);
+app.use("/api/ai", aiRoutes);
 
 // ✅ Serve uploaded files statically
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));

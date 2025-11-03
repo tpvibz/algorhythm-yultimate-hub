@@ -7,6 +7,7 @@ import BottomNav from "@/components/BottomNav";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import PlayerProfileSection from "./PlayerProfileSection";
+import MatchesTab from "./MatchesTab";
 import AttendanceSection from "./AttendanceSection";
 import HomeVisitsSection from "./HomeVisitsSection";
 import AchievementsSection from "./AchievementsSection";
@@ -125,13 +126,14 @@ const PlayerDashboard = () => {
 
           {/* Tabs Navigation */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-8">
-            <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-2 mb-6">
+            <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-2 mb-6">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="attendance">📊 Attendance</TabsTrigger>
               <TabsTrigger value="home-visits">🏠 Home Visits</TabsTrigger>
               <TabsTrigger value="achievements">🏆 Achievements</TabsTrigger>
               <TabsTrigger value="feedback">💬 Feedback</TabsTrigger>
               <TabsTrigger value="transfers">🔁 Transfers</TabsTrigger>
+              <TabsTrigger value="matches">🏟️ Matches</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview" className="space-y-6">
@@ -159,6 +161,10 @@ const PlayerDashboard = () => {
 
             <TabsContent value="transfers">
               <TransferSection playerId={playerId} player={playerProfile} onRefresh={() => fetchPlayerData(playerId)} />
+            </TabsContent>
+
+            <TabsContent value="matches">
+              <MatchesTab playerId={playerId} />
             </TabsContent>
           </Tabs>
         </div>

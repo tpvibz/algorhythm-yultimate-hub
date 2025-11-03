@@ -7,6 +7,7 @@ import {
   createTournament,
   getAllTournaments,
   getTournamentById,
+  getTournamentImage,
   updateTournament,
   deleteTournament,
 } from "../controllers/tournamentController.js";
@@ -25,16 +26,8 @@ if (!fs.existsSync(uploadsDir)) {
   console.log("✅ Created uploads directory:", uploadsDir);
 }
 
-// ✅ Multer setup
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadsDir);
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, `${Date.now()}-${file.fieldname}${ext}`);
-  },
-});
+// ✅ Multer setup (memory storage for storing image in MongoDB)
+const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
   if (file.mimetype.startsWith("image/")) cb(null, true);
@@ -70,6 +63,7 @@ router.post(
 
 router.get("/", getAllTournaments);
 router.get("/:id", getTournamentById);
+router.get("/:id/image", getTournamentImage);
 router.put("/:id", upload.single("image"), updateTournament);
 router.delete("/:id", deleteTournament);
 

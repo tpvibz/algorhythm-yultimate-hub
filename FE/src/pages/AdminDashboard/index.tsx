@@ -14,6 +14,7 @@ import ReportsTab from "./ReportsTab";
 import AnalyticsTab from "./AnalyticsTab";
 import ScheduleBuilderTab from "./ScheduleBuilderTab";
 import { tournamentAPI, authAPI, Tournament, handleAPIError } from "@/services/api";
+import SpiritLeaderboardTab from "../CoachDashboard/SpiritLeaderboardTab";
 
 const AdminDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
@@ -138,6 +139,7 @@ const AdminDashboard = () => {
             <TabButton id="accounts" label="Account Requests" icon={UserCheck} />
             
             <TabButton id="analytics" label="Analytics" icon={TrendingUp} />
+            <TabButton id="spirit-leaderboard" label="Spirit Leaderboard" icon={Trophy} />
             <TabButton id="reports" label="Reports & Analysis" icon={FileText} />
           </div>
 
@@ -155,6 +157,7 @@ const AdminDashboard = () => {
           )}
           
           {activeTab === "analytics" && <AnalyticsTab />}
+          {activeTab === "spirit-leaderboard" && <SpiritLeaderboardTab />}
           {activeTab === "reports" && <ReportsTab />}
         </div>
       </div>

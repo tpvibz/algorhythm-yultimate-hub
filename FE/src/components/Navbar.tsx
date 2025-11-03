@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Menu, X, Zap,ChevronRight } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
 import LanguageSelector from "./LanguageSelector";
+import Translate from "./Translate";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -28,25 +29,25 @@ const Navbar = () => {
                 to="/" 
                 className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors px-4 py-2 rounded-full hover:bg-accent"
               >
-                Home
+                <Translate>Home</Translate>
               </Link>
               <Link 
                 to="/about-us" 
                 className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors px-4 py-2 rounded-full hover:bg-accent"
               >
-                About
+                <Translate>About</Translate>
               </Link>
               <Link 
                 to="/tournaments" 
                 className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors px-4 py-2 rounded-full hover:bg-accent"
               >
-                Tournaments
+                <Translate>Tournaments</Translate>
               </Link>
               <Link 
                 to="/contact" 
                 className="text-sm font-medium text-foreground/80 hover:text-primary transition-colors px-4 py-2 rounded-full hover:bg-accent"
               >
-                Contact
+                <Translate>Contact</Translate>
               </Link>
             </div>
 
@@ -76,9 +77,7 @@ const Navbar = () => {
               <div className="bg-primary p-2 rounded-lg group-hover:scale-110 transition-transform">
                 <Zap className="h-6 w-6 text-primary-foreground" />
               </div>
-              <span className="text-xl font-bold text-primary">
-                AlgoRhythm
-              </span>
+              <span className="text-xl font-bold text-primary">AlgoRhythm</span>
             </Link>
 
             <button
@@ -96,28 +95,28 @@ const Navbar = () => {
                 className="block py-2 text-foreground hover:text-primary transition-colors"
                 onClick={() => setIsOpen(false)}
               >
-                Home
+                <Translate>Home</Translate>
               </Link>
               <Link 
                 to="/about" 
                 className="block py-2 text-foreground hover:text-primary transition-colors"
                 onClick={() => setIsOpen(false)}
               >
-                About
+                <Translate>About</Translate>
               </Link>
               <Link 
                 to="/tournaments" 
                 className="block py-2 text-foreground hover:text-primary transition-colors"
                 onClick={() => setIsOpen(false)}
               >
-                Tournaments
+                <Translate>Tournaments</Translate>
               </Link>
               <Link 
                 to="/contact" 
                 className="block py-2 text-foreground hover:text-primary transition-colors"
                 onClick={() => setIsOpen(false)}
               >
-                Contact
+                <Translate>Contact</Translate>
               </Link>
               <div className="flex flex-col gap-2 pt-2">
                 <div className="flex items-center gap-2">
@@ -126,12 +125,12 @@ const Navbar = () => {
                 </div>
                 <Link to="/login" onClick={() => setIsOpen(false)}>
                   <Button variant="outline" size="sm" className="w-full">
-                    Login
+                    <Translate>Login</Translate>
                   </Button>
                 </Link>
                 <Link to="/register" onClick={() => setIsOpen(false)}>
                   <Button size="sm" className="w-full">
-                    Register
+                    <Translate>Register</Translate>
                   </Button>
                 </Link>
               </div>

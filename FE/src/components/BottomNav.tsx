@@ -8,7 +8,7 @@ const BottomNav = () => {
     { name: "Schedule", path: "/schedule", icon: Calendar },
     { name: "Pool & Bracket", path: "/pool-bracket", icon: Trophy },
     { name: "Teams", path: "/teams", icon: Users },
-    { name: "Player Stats", path: "/player-stats", icon: BarChart3 },
+    // Removed Player Stats from navbar
     { name: "Spirit", path: "/spirit", icon: Heart },
     { name: "Gallery", path: "/gallery", icon: Image },
     { name: "Scoreboard", path: "/scoreboard", icon: Target },

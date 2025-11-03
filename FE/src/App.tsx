@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
 import { LanguageProvider } from "@/contexts/LanguageContext";
+import AutoTranslate from "@/components/AutoTranslate";
 import Home from "./pages/Home";
 import SelectRole from "./pages/SelectRole";
 import RoleLogin from "./pages/RoleLogin";
@@ -18,6 +19,7 @@ import Schedule from "./pages/Schedule";
 import PoolBracket from "./pages/PoolBracket";
 import Teams from "./pages/Teams";
 import PlayerStats from "./pages/PlayerStats";
+import VolunteerPlayerStatsEntry from "./pages/VolunteerPlayerStatsEntry";
 import Spirit from "./pages/Spirit";
 import Fanzone from "./pages/Fanzone";
 import Gallery from "./pages/Gallery";
@@ -36,6 +38,7 @@ const App = () => (
         <TooltipProvider>
           <Toaster />
           <Sonner />
+          <AutoTranslate />
           <BrowserRouter>
             <Routes>
               <Route path="/" element={<Home />} />
@@ -51,6 +54,7 @@ const App = () => (
               <Route path="/pool-bracket" element={<PoolBracket />} />
               <Route path="/teams" element={<Teams />} />
               <Route path="/player-stats" element={<PlayerStats />} />
+              <Route path="/volunteer/player-stats-entry" element={<VolunteerPlayerStatsEntry />} />
               <Route path="/spirit" element={<Spirit />} />
               <Route path="/fanzone" element={<Fanzone />} />
               <Route path="/gallery" element={<Gallery />} />

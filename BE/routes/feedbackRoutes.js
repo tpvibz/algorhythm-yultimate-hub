@@ -6,7 +6,9 @@ import {
   submitSpiritScore,
   submitPlayerFeedback,
   getMatchPlayersForFeedback,
-  checkFeedbackCompletionStatus
+  checkFeedbackCompletionStatus,
+  getCoachSpiritScores,
+  getTournamentSpiritLeaderboard
 } from "../controllers/feedbackController.js";
 import { protect } from "../middleware/authMiddleware.js";
 
@@ -32,6 +34,12 @@ router.get("/matches/:matchId/players", getMatchPlayersForFeedback);
 
 // Check if coach can register (feedback completion status)
 router.get("/check-completion", checkFeedbackCompletionStatus);
+
+// Coach spirit scores visibility (given and received)
+router.get("/coach/spirit-scores", getCoachSpiritScores);
+
+// Tournament spirit leaderboard (separate from performance)
+router.get("/tournaments/:tournamentId/spirit-leaderboard", getTournamentSpiritLeaderboard);
 
 export default router;
 
