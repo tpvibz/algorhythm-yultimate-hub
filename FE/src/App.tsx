@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { ThemeProvider } from "next-themes";
+import { LanguageProvider } from "@/contexts/LanguageContext";
 import Home from "./pages/Home";
 import SelectRole from "./pages/SelectRole";
 import RoleLogin from "./pages/RoleLogin";
@@ -31,37 +32,39 @@ const queryClient = new QueryClient();
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <ThemeProvider attribute="class" defaultTheme="dark">
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/select-role" element={<SelectRole />} />
-            <Route path="/login/:role" element={<RoleLogin />} />
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
-            <Route path="/dashboard/admin" element={<AdminDashboard />} />
-            <Route path="/dashboard/coach" element={<CoachDashboard />} />
-            <Route path="/dashboard/volunteer" element={<VolunteerDashboard />} />
-            <Route path="/dashboard/player" element={<PlayerDashboard />} />
-            <Route path="/schedule" element={<Schedule />} />
-            <Route path="/pool-bracket" element={<PoolBracket />} />
-            <Route path="/teams" element={<Teams />} />
-            <Route path="/player-stats" element={<PlayerStats />} />
-            <Route path="/spirit" element={<Spirit />} />
-            <Route path="/fanzone" element={<Fanzone />} />
-            <Route path="/gallery" element={<Gallery />} />
-            <Route path="/tournaments" element={<Tournaments />} />
-            <Route path="/scoreboard" element={<Scoreboard />} />
-            <Route path="/leaderboards" element={<Leaderboards />} />
-            <Route path="/about-us" element={<AboutUs />} />
-            <Route path="/contact" element={<ContactUs />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
+      <LanguageProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/select-role" element={<SelectRole />} />
+              <Route path="/login/:role" element={<RoleLogin />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
+              <Route path="/dashboard/admin" element={<AdminDashboard />} />
+              <Route path="/dashboard/coach" element={<CoachDashboard />} />
+              <Route path="/dashboard/volunteer" element={<VolunteerDashboard />} />
+              <Route path="/dashboard/player" element={<PlayerDashboard />} />
+              <Route path="/schedule" element={<Schedule />} />
+              <Route path="/pool-bracket" element={<PoolBracket />} />
+              <Route path="/teams" element={<Teams />} />
+              <Route path="/player-stats" element={<PlayerStats />} />
+              <Route path="/spirit" element={<Spirit />} />
+              <Route path="/fanzone" element={<Fanzone />} />
+              <Route path="/gallery" element={<Gallery />} />
+              <Route path="/tournaments" element={<Tournaments />} />
+              <Route path="/scoreboard" element={<Scoreboard />} />
+              <Route path="/leaderboards" element={<Leaderboards />} />
+              <Route path="/about-us" element={<AboutUs />} />
+              <Route path="/contact" element={<ContactUs />} />
+              {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </LanguageProvider>
     </ThemeProvider>
   </QueryClientProvider>
 );

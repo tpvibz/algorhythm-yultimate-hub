@@ -11,13 +11,27 @@ const api = axios.create({
   },
 });
 
-// Add request interceptor to include auth token
+// Add request interceptor to include auth token and language
 api.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token');
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+    
+    // Add language parameter from localStorage or URL
+    const language = localStorage.getItem('app_language') || 
+                     new URLSearchParams(window.location.search).get('lang') || 
+                     'en';
+    
+    // Add language to query params if not already present
+    if (!config.params) {
+      config.params = {};
+    }
+    if (!config.params.lang) {
+      config.params.lang = language;
+    }
+    
     return config;
   },
   (error) => {

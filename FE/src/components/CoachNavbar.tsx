@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, X, Clipboard, Home, LogOut, RefreshCw, ChevronDown } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
+import LanguageSelector from "./LanguageSelector";
 import {
   Dialog,
   DialogTrigger,
@@ -150,6 +151,7 @@ const CoachNavbar = () => {
                 )}
               </div>
 
+              <LanguageSelector />
               <ThemeToggle />
 
               {/* Logout Button */}
@@ -246,7 +248,10 @@ const CoachNavbar = () => {
               </div>
 
               <div className="flex flex-col gap-2 pt-3 border-t border-border">
-                <ThemeToggle />
+                <div className="flex items-center gap-2">
+                  <LanguageSelector />
+                  <ThemeToggle />
+                </div>
                 <Button 
                   size="sm" 
                   onClick={() => {

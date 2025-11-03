@@ -24,6 +24,7 @@ import institutionRoutes from "./routes/institutionRoutes.js";
 import playerRoutes from "./routes/playerRoutes.js";
 import feedbackRoutes from "./routes/feedbackRoutes.js";
 import analyticsRoutes from "./routes/analyticsRoutes.js";
+import translationMiddleware from "./middleware/translationMiddleware.js";
 
 // ✅ Fix for __dirname and __filename in ES Modules
 const __filename = fileURLToPath(import.meta.url);
@@ -40,6 +41,9 @@ const app = express();
 // Middleware
 app.use(express.json());
 app.use(cors());
+
+// Translation middleware - must be before routes to intercept all responses
+app.use("/api", translationMiddleware);
 
 // API Routes
 app.use("/api/auth", authRoutes);

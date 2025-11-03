@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Menu, X, Zap,ChevronRight } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
+import LanguageSelector from "./LanguageSelector";
 
 const Navbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -50,6 +51,7 @@ const Navbar = () => {
             </div>
 
             <div className="flex items-center gap-3 ml-2">
+              <LanguageSelector />
               <ThemeToggle />
               
               
@@ -118,7 +120,10 @@ const Navbar = () => {
                 Contact
               </Link>
               <div className="flex flex-col gap-2 pt-2">
-                <ThemeToggle />
+                <div className="flex items-center gap-2">
+                  <LanguageSelector />
+                  <ThemeToggle />
+                </div>
                 <Link to="/login" onClick={() => setIsOpen(false)}>
                   <Button variant="outline" size="sm" className="w-full">
                     Login
