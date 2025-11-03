@@ -11,6 +11,20 @@ const api = axios.create({
   },
 });
 
+// Add request interceptor to include auth token
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
+
 // Tournament interfaces
 export interface Tournament {
   _id: string;
@@ -1172,6 +1186,162 @@ export const feedbackAPI = {
       params: { coachId }
     });
     return response.data;
+  },
+};
+
+// Analytics interfaces
+export interface TournamentSummaryResponse {
+  success: boolean;
+  data: {
+    tournament?: {
+      _id: string;
+      name: string;
+      startDate: string;
+      endDate: string;
+      location: string;
+      division: string;
+      format: string;
+      status: string;
+    };
+    summary?: {
+      totalTeams: number;
+      totalMatches: number;
+      completedMatches: number;
+      scheduledMatches: number;
+      ongoingMatches: number;
+      totalPointsScored: number;
+      averagePointsPerMatch: number;
+    };
+    teams?: Array<{
+      teamId: string;
+      teamName: string;
+      totalMembers: number;
+      coach: any;
+      matchesPlayed: number;
+      wins: number;
+      losses: number;
+      draws: number;
+      totalPointsFor: number;
+      totalPointsAgainst: number;
+    }>;
+    spiritRankings?: Array<{
+      teamId: string;
+      teamName: string;
+      averageScore: number;
+      categoryAverages: {
+        rulesKnowledge: number;
+        foulsContact: number;
+        fairMindedness: number;
+        positiveAttitude: number;
+        communication: number;
+      };
+      submissionCount: number;
+    }>;
+    matches?: Array<{
+      _id: string;
+      teamA: string;
+      teamB: string;
+      score: { teamA: number; teamB: number };
+      status: string;
+      startTime: string;
+      winner: string;
+    }>;
+    summaries?: Array<{
+      tournament: {
+        _id: string;
+        name: string;
+        startDate: string;
+        endDate: string;
+        location: string;
+        status: string;
+      };
+      totalTeams: number;
+      totalMatches: number;
+      completedMatches: number;
+    }>;
+    count?: number;
+  };
+}
+
+export interface PlayerParticipationResponse {
+  success: boolean;
+  data: {
+    genderDistribution: Record<string, number>;
+    ageStats: {
+      youngest: number;
+      oldest: number;
+      average: number;
+      median: number;
+    };
+    participationStats: {
+      totalPlayers: number;
+      playersWithMatches: number;
+      totalMatchesPlayed: number;
+      averageMatchesPerPlayer: number;
+      playersInTournaments: number;
+    };
+    attendanceStats?: {
+      totalMatchAttendanceRecords: number;
+      presentCount: number;
+      absentCount: number;
+      lateCount: number;
+      attendanceRate: number;
+    };
+    playersByTeam: Record<string, number>;
+    totalPlayers: number;
+    playerProfiles: Array<{
+      _id: string;
+      name: string;
+      age: number | null;
+      gender: string | null;
+      team: string | null;
+      totalMatchesPlayed: number;
+      tournamentsPlayed: number;
+    }>;
+  };
+}
+
+// Analytics API functions
+export const analyticsAPI = {
+  // Get tournament summary
+  getTournamentSummary: async (tournamentId?: string): Promise<TournamentSummaryResponse> => {
+    const url = tournamentId 
+      ? `/analytics/tournament-summary/${tournamentId}`
+      : '/analytics/tournament-summary';
+    const response = await api.get(url);
+    return response.data;
+  },
+
+  // Get player participation data
+  getPlayerParticipationData: async (tournamentId?: string): Promise<PlayerParticipationResponse> => {
+    const response = await api.get('/analytics/player-participation', {
+      params: tournamentId ? { tournamentId } : {}
+    });
+    return response.data;
+  },
+
+  // Download tournament report
+  downloadTournamentReport: async (tournamentId: string, reportType: 'attendance' | 'matches' | 'scoring' | 'full') => {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_BASE_URL}/analytics/report/${tournamentId}/${reportType}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to download report');
+    }
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `tournament-${tournamentId}-${reportType}-${Date.now()}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
   },
 };
 

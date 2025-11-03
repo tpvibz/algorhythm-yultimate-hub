@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import {
-  Trophy, BarChart3, Calendar, UserCheck, Users, FileText, CalendarDays
+  Trophy, BarChart3, Calendar, UserCheck, Users, FileText, CalendarDays, TrendingUp
 } from "lucide-react";
 import AdminNavbar from "@/components/AdminNavbar";
 import BottomNav from "@/components/BottomNav";
@@ -9,8 +9,9 @@ import OverviewTab from "./OverviewTab";
 import TournamentsTab from "./TournamentsTab";
 import SessionsTab from "./SessionsTab";
 import AccountsTab from "./AccountsTab";
-import VolunteersTab from "./VolunteersTab";
+
 import ReportsTab from "./ReportsTab";
+import AnalyticsTab from "./AnalyticsTab";
 import ScheduleBuilderTab from "./ScheduleBuilderTab";
 import { tournamentAPI, authAPI, Tournament, handleAPIError } from "@/services/api";
 
@@ -135,7 +136,8 @@ const AdminDashboard = () => {
             <TabButton id="schedule-builder" label="Schedule Builder" icon={CalendarDays} />
             <TabButton id="sessions" label="Coaching Sessions" icon={Calendar} />
             <TabButton id="accounts" label="Account Requests" icon={UserCheck} />
-            <TabButton id="volunteers" label="Volunteers" icon={Users} />
+            
+            <TabButton id="analytics" label="Analytics" icon={TrendingUp} />
             <TabButton id="reports" label="Reports & Analysis" icon={FileText} />
           </div>
 
@@ -151,13 +153,8 @@ const AdminDashboard = () => {
               handleReject={handleReject}
             />
           )}
-          {activeTab === "volunteers" && (
-            <VolunteersTab 
-              volunteerRequests={volunteerRequests}
-              handleApprove={handleApprove}
-              handleReject={handleReject}
-            />
-          )}
+          
+          {activeTab === "analytics" && <AnalyticsTab />}
           {activeTab === "reports" && <ReportsTab />}
         </div>
       </div>
