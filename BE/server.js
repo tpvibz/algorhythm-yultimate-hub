@@ -17,10 +17,18 @@ import scoreRoutes from "./routes/scoreRoutes.js";
 import predictionRoutes from "./routes/predictionRoutes.js";
 import leaderboardRoutes from "./routes/leaderboardRoutes.js";
 import matchImageRoutes from "./routes/matchImageRoutes.js";
+import playerStatsRoutes from "./routes/playerStatsRoutes.js";
 import attendanceRoutes from "./routes/attendanceRoutes.js";
+import matchAttendanceRoutes from "./routes/matchAttendanceRoutes.js";
 import studentRoutes from "./routes/studentRoutes.js";
 import institutionRoutes from "./routes/institutionRoutes.js";
 import playerRoutes from "./routes/playerRoutes.js";
+import feedbackRoutes from "./routes/feedbackRoutes.js";
+import analyticsRoutes from "./routes/analyticsRoutes.js";
+import notificationRoutes from "./routes/notificationRoutes.js";
+import translationMiddleware from "./middleware/translationMiddleware.js";
+import translateRoutes from "./routes/translateRoutes.js";
+import aiRoutes from "./routes/aiRoutes.js";
 
 // ✅ Fix for __dirname and __filename in ES Modules
 const __filename = fileURLToPath(import.meta.url);
@@ -38,6 +46,9 @@ const app = express();
 app.use(express.json());
 app.use(cors());
 
+// Translation middleware - must be before routes to intercept all responses
+app.use("/api", translationMiddleware);
+
 // API Routes
 app.use("/api/auth", authRoutes);
 app.use("/api/sessions", sessionRoutes);
@@ -49,10 +60,17 @@ app.use("/api/score", scoreRoutes);
 app.use("/api/predictions", predictionRoutes);
 app.use("/api/leaderboard", leaderboardRoutes);
 app.use("/api/match-images", matchImageRoutes);
+app.use("/api/player-stats", playerStatsRoutes);
 app.use("/api/attendance", attendanceRoutes);
+app.use("/api/match-attendance", matchAttendanceRoutes);
 app.use("/api/students", studentRoutes);
 app.use("/api/institutions", institutionRoutes);
 app.use("/api/player", playerRoutes);
+app.use("/api/feedback", feedbackRoutes);
+app.use("/api/analytics", analyticsRoutes);
+app.use("/api/notifications", notificationRoutes);
+app.use("/api/translate", translateRoutes);
+app.use("/api/ai", aiRoutes);
 
 // ✅ Serve uploaded files statically
 app.use("/uploads", express.static(path.join(__dirname, "uploads")));
@@ -69,5 +87,5 @@ app.use((err, req, res, next) => {
 });
 
 // Start server
-const PORT = process.env.PORT || 5000;
+const PORT = process.env.PORT || 9000;
 app.listen(PORT, () => console.log(`🚀 Server running on port ${PORT}`));

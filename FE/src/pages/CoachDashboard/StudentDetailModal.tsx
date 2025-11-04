@@ -84,7 +84,7 @@ const StudentDetailModal = ({ studentId, onClose }: StudentDetailModalProps) => 
   const fetchStudentDetails = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:5000/api/students/${studentId}/details`);
+      const response = await fetch(`http://localhost:9000/api/students/${studentId}/details`);
       const data = await response.json();
       if (response.ok) {
         setStudentDetails(data);

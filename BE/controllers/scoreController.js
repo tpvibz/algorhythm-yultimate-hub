@@ -1,6 +1,41 @@
 import MatchScoreEvent from "../models/matchScoreEventModel.js";
 import Match from "../models/matchModel.js";
 import VolunteerTournamentAssignment from "../models/volunteerTournamentAssignmentModel.js";
+import MatchAttendance from "../models/matchAttendanceModel.js";
+import Team from "../models/teamModel.js";
+import TeamRoster from "../models/teamRosterModel.js";
+
+// Helper function to check if attendance is complete for a match
+const checkAttendanceComplete = async (matchId) => {
+  const match = await Match.findById(matchId);
+  if (!match) return false;
+
+  // Get all players from both teams
+  const teamARoster = await TeamRoster.find({ teamId: match.teamAId });
+  const teamBRoster = await TeamRoster.find({ teamId: match.teamBId });
+  const teamA = await Team.findById(match.teamAId);
+  const teamB = await Team.findById(match.teamBId);
+
+  // Count total players
+  let totalPlayers = teamARoster.filter(r => r.status === 'active').length + 
+                     teamBRoster.filter(r => r.status === 'active').length;
+
+  // Add legacy players if they exist
+  if (teamA && teamA.players && Array.isArray(teamA.players)) {
+    totalPlayers += teamA.players.filter(p => p.playerId).length;
+  }
+  if (teamB && teamB.players && Array.isArray(teamB.players)) {
+    totalPlayers += teamB.players.filter(p => p.playerId).length;
+  }
+
+  if (totalPlayers === 0) return true; // No players to track
+
+  // Get attendance records
+  const attendanceRecords = await MatchAttendance.find({ matchId });
+  const attendanceCount = attendanceRecords.length;
+
+  return attendanceCount >= totalPlayers;
+};
 
 // Record a score event (point scored)
 export const recordScoreEvent = async (req, res) => {
@@ -37,6 +72,16 @@ export const recordScoreEvent = async (req, res) => {
       return res.status(400).json({
         success: false,
         message: "Team ID does not match any team in this match"
+      });
+    }
+
+    // Check if attendance is complete before allowing score updates
+    const attendanceComplete = await checkAttendanceComplete(matchId);
+    if (!attendanceComplete) {
+      return res.status(400).json({
+        success: false,
+        message: "Attendance must be completed before recording scores. Please mark attendance for all players first.",
+        requiresAttendance: true
       });
     }
 
@@ -177,6 +222,20 @@ export const updateMatchScore = async (req, res) => {
         return res.status(403).json({
           success: false,
           message: "Volunteer not assigned to this tournament"
+        });
+      }
+    }
+
+    // If starting the match (status changing from scheduled to ongoing) or updating score,
+    // check if attendance is complete
+    const isStartingMatch = status === 'ongoing' && match.status === 'scheduled';
+    if ((isStartingMatch || score) && match.status === 'scheduled') {
+      const attendanceComplete = await checkAttendanceComplete(matchId);
+      if (!attendanceComplete) {
+        return res.status(400).json({
+          success: false,
+          message: "Attendance must be completed before starting the match or updating scores. Please mark attendance for all players first.",
+          requiresAttendance: true
         });
       }
     }

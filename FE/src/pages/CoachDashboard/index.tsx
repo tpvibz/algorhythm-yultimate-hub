@@ -1,15 +1,20 @@
 import { useState } from "react";
-import { Users, Calendar, BookOpen, BarChart3, GraduationCap, ClipboardCheck } from "lucide-react";
+import { Users, Calendar, BookOpen, BarChart3, GraduationCap, ClipboardCheck, MessageSquare, TrendingUp, HeartHandshake, Trophy, Sparkles } from "lucide-react";
 import CoachNavbar from "@/components/CoachNavbar";
 import BottomNav from "@/components/BottomNav";
 import CoachNotifications from "@/components/CoachNotifications";
 import CoachTeams from "@/components/CoachTeams";
 import OverviewTab from "./OverviewTab";
+import AIAssistantTab from "./AIAssistantTab";
 import UpcomingSessionsTab from "./UpcomingSessionsTab";
 import QuickActionsTab from "./QuickActionsTab";
 import SessionsTab from "./SessionsTab";
 import StudentsTab from "./StudentsTab";
 import AttendanceTab from "./AttendanceTab";
+import FeedbackTab from "./FeedbackTab";
+import AnalyticsTab from "./AnalyticsTab";
+import SpiritScoresTab from "./SpiritScoresTab";
+import SpiritLeaderboardTab from "./SpiritLeaderboardTab";
 
 const CoachDashboard = () => {
   const [activeTab, setActiveTab] = useState("overview");
@@ -78,7 +83,12 @@ const CoachDashboard = () => {
             <TabButton id="students" label="My Students" icon={GraduationCap} />
             <TabButton id="sessions" label="Sessions" icon={Calendar} />
             <TabButton id="attendance" label="Attendance" icon={ClipboardCheck} />
+            <TabButton id="feedback" label="Post-Tournament Feedback" icon={MessageSquare} />
+            <TabButton id="analytics" label="Analytics" icon={TrendingUp} />
+            <TabButton id="spirit-scores" label="Spirit Scores" icon={HeartHandshake} />
+            <TabButton id="spirit-leaderboard" label="Spirit Leaderboard" icon={Trophy} />
             <TabButton id="actions" label="Quick Actions" icon={BookOpen} />
+            <TabButton id="ai" label="AI Assistant" icon={Sparkles} />
           </div>
 
           {/* Tab Content */}
@@ -88,7 +98,7 @@ const CoachDashboard = () => {
                 <div className="lg:col-span-2">
                   <OverviewTab />
                 </div>
-                <UpcomingSessionsTab />
+                <UpcomingSessionsTab onViewSessions={() => setActiveTab("sessions")} /> {/* 👈 Add this */}
                 <QuickActionsTab />
               </>
             )}
@@ -107,9 +117,34 @@ const CoachDashboard = () => {
                 <AttendanceTab />
               </div>
             )}
+            {activeTab === "feedback" && (
+              <div className="lg:col-span-2">
+                <FeedbackTab />
+              </div>
+            )}
+            {activeTab === "analytics" && (
+              <div className="lg:col-span-2">
+                <AnalyticsTab />
+              </div>
+            )}
+            {activeTab === "spirit-scores" && (
+              <div className="lg:col-span-2">
+                <SpiritScoresTab />
+              </div>
+            )}
+            {activeTab === "spirit-leaderboard" && (
+              <div className="lg:col-span-2">
+                <SpiritLeaderboardTab />
+              </div>
+            )}
             {activeTab === "actions" && (
               <div className="lg:col-span-2">
                 <QuickActionsTab />
+              </div>
+            )}
+            {activeTab === "ai" && (
+              <div className="lg:col-span-2">
+                <AIAssistantTab />
               </div>
             )}
           </div>

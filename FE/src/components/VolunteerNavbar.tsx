@@ -2,6 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Menu, X, Heart, Home, LogOut, RefreshCw, ChevronDown } from "lucide-react";
 import ThemeToggle from "./ThemeToggle";
+import LanguageSelector from "./LanguageSelector";
 
 const VolunteerNavbar = () => {
   const [isOpen, setIsOpen] = useState(false);
@@ -94,6 +95,7 @@ const VolunteerNavbar = () => {
                 )}
               </div>
 
+              <LanguageSelector />
               <ThemeToggle />
 
               {/* Logout Button */}
@@ -169,7 +171,10 @@ const VolunteerNavbar = () => {
               </div>
 
               <div className="flex flex-col gap-2 pt-3 border-t border-border">
-                <ThemeToggle />
+                <div className="flex items-center gap-2">
+                  <LanguageSelector />
+                  <ThemeToggle />
+                </div>
                 <Button 
                   size="sm" 
                   onClick={() => {

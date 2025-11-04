@@ -1,6 +1,7 @@
 import VolunteerTournamentAssignment from "../models/volunteerTournamentAssignmentModel.js";
 import Person from "../models/personModel.js";
 import Tournament from "../models/tournamentModel.js";
+import { createNotification } from "./notificationController.js";
 
 // Get all volunteers (people with volunteer role)
 export const getAllVolunteers = async (req, res) => {
@@ -97,6 +98,19 @@ export const assignVolunteersToTournament = async (req, res) => {
         ).populate("volunteerId", "firstName lastName email uniqueUserId");
 
         assignments.push(assignment);
+
+        // Notify volunteer about assignment
+        try {
+          await createNotification(
+            volunteerId,
+            "volunteer_assigned",
+            "Tournament Assignment",
+            `You have been assigned as ${role || "General Support"} for ${tournament?.name || "a tournament"}.`,
+            { relatedEntityId: tournamentId, relatedEntityType: "tournament" }
+          );
+        } catch (notificationError) {
+          console.error("Error creating notification for volunteer assignment:", notificationError);
+        }
       } catch (error) {
         if (error.code === 11000) {
           // Duplicate assignment - already exists
@@ -345,4 +359,3 @@ export const updateAssignment = async (req, res) => {
     });
   }
 };
-

@@ -20,7 +20,7 @@ const HomeVisitsSection = ({ playerId }: HomeVisitsSectionProps) => {
   const fetchHomeVisits = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:5000/api/player/${playerId}/home-visits`);
+      const response = await fetch(`http://localhost:9000/api/player/${playerId}/home-visits`);
       if (response.ok) {
         const data = await response.json();
         setHomeVisits(data);

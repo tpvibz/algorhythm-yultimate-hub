@@ -7,18 +7,23 @@ import BottomNav from "@/components/BottomNav";
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import PlayerProfileSection from "./PlayerProfileSection";
+import MatchesTab from "./MatchesTab";
 import AttendanceSection from "./AttendanceSection";
 import HomeVisitsSection from "./HomeVisitsSection";
 import AchievementsSection from "./AchievementsSection";
 import TransferSection from "./TransferSection";
 import MatchesSection from "./MatchesSection";
 import StatsCards from "./StatsCards";
+import FeedbackSection from "./FeedbackSection";
+import PlayerFloatingChat from "./PlayerFloatingChat";
+import { playerStatsAPI } from "@/services/api";
 
 const PlayerDashboard = () => {
   const [playerId, setPlayerId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [playerProfile, setPlayerProfile] = useState<any>(null);
   const [stats, setStats] = useState<any>(null);
+  const [playerStats, setPlayerStats] = useState<any[]>([]);
   const [activeTab, setActiveTab] = useState("overview");
 
   useEffect(() => {
@@ -35,9 +40,10 @@ const PlayerDashboard = () => {
   const fetchPlayerData = async (id: string) => {
     try {
       setLoading(true);
-      const [profileRes, statsRes] = await Promise.all([
-        fetch(`http://localhost:5000/api/player/${id}`),
-        fetch(`http://localhost:5000/api/player/${id}/stats`),
+      const [profileRes, statsRes, playerStatsRes] = await Promise.all([
+        fetch(`http://localhost:9000/api/player/${id}`),
+        fetch(`http://localhost:9000/api/player/${id}/stats`),
+        playerStatsAPI.getPlayerStats(id)
       ]);
 
       if (profileRes.ok) {
@@ -48,6 +54,10 @@ const PlayerDashboard = () => {
       if (statsRes.ok) {
         const statsData = await statsRes.json();
         setStats(statsData);
+      }
+
+      if (playerStatsRes.success) {
+        setPlayerStats(playerStatsRes.data.stats || []);
       }
     } catch (error) {
       console.error("Error fetching player data:", error);
@@ -124,12 +134,14 @@ const PlayerDashboard = () => {
 
           {/* Tabs Navigation */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="mt-8">
-            <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-2 mb-6">
+            <TabsList className="grid w-full grid-cols-2 md:grid-cols-3 lg:grid-cols-7 gap-2 mb-6">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="attendance">📊 Attendance</TabsTrigger>
               <TabsTrigger value="home-visits">🏠 Home Visits</TabsTrigger>
               <TabsTrigger value="achievements">🏆 Achievements</TabsTrigger>
+              <TabsTrigger value="feedback">💬 Feedback</TabsTrigger>
               <TabsTrigger value="transfers">🔁 Transfers</TabsTrigger>
+              <TabsTrigger value="matches">🏟️ Matches</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview" className="space-y-6">
@@ -151,17 +163,43 @@ const PlayerDashboard = () => {
               <AchievementsSection playerId={playerId} fullWidth />
             </TabsContent>
 
+            <TabsContent value="feedback">
+              <FeedbackSection playerId={playerId} />
+            </TabsContent>
+
             <TabsContent value="transfers">
               <TransferSection playerId={playerId} player={playerProfile} onRefresh={() => fetchPlayerData(playerId)} />
+            </TabsContent>
+
+            <TabsContent value="matches">
+              <MatchesTab playerId={playerId} />
             </TabsContent>
           </Tabs>
         </div>
       </div>
+<BottomNav />
 
-      <BottomNav />
-    </div>
-  );
+{/* AI Performance Coach (Floating) */}
+<PlayerFloatingChat
+  playerStats={playerStats}
+  recentMatches={[]}
+  performanceGoals={[
+    "Improve throw accuracy",
+    "Better defensive positioning",
+    "Increase game awareness",
+    "Faster decision making"
+  ]}
+  currentChallenges={[
+    "Handling pressure situations",
+    "Long throws under wind",
+    "Quick transitions",
+    "Communication with teammates"
+  ]}
+/>
+</div>
+);
 };
 
 export default PlayerDashboard;
+
 

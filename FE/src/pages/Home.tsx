@@ -4,7 +4,8 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Users, Trophy, TrendingUp, Heart, Target, Shield, Calendar, MapPin, Clock } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import BottomNav from "@/components/BottomNav";
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
+import api, { tournamentAPI, Tournament } from "@/services/api";
 
 // Type declarations for window.storage
 declare global {
@@ -70,45 +71,87 @@ const dummyPosts: Post[] = [
 const Home = () => {
   const [posts, setPosts] = useState<Post[]>([]);
   const [loading, setLoading] = useState(true);
+  const [isLoadingMore, setIsLoadingMore] = useState(false);
+  const [page, setPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const limit = 3;
+
+  // Build absolute URLs for files returned as relative paths (e.g., /uploads/..)
+  const fileBaseUrl = useMemo(() => {
+    try {
+      const base = (api as any)?.defaults?.baseURL as string | undefined;
+      if (!base) return "";
+      const url = new URL(base);
+      // api base is http://host:port/api → strip trailing /api
+      return `${url.origin}`;
+    } catch {
+      return "";
+    }
+  }, []);
 
   useEffect(() => {
-    // Load posts from storage
-    const loadPosts = async () => {
+    // Initial load of tournaments as posts
+    const loadInitial = async () => {
       try {
-        const result = await window.storage.list('post:', true);
-        if (result && result.keys && result.keys.length > 0) {
-          const loadedPosts = await Promise.all(
-            result.keys.map(async (key) => {
-              try {
-                const postData = await window.storage.get(key, true);
-                return postData ? JSON.parse(postData.value) : null;
-              } catch {
-                return null;
-              }
-            })
-          );
-          
-          const validPosts = loadedPosts
-            .filter((post): post is Post => post !== null)
-            .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-            .slice(0, 3); // Show only latest 3 posts
-          
-          setPosts(validPosts);
-        } else {
-          // No posts in storage, use dummy posts
-          setPosts(dummyPosts);
-        }
+        setLoading(true);
+        const resp = await tournamentAPI.getAllTournaments({ limit, page: 1 });
+        const items: Tournament[] = resp?.data?.tournaments || [];
+        const mapped: Post[] = items.map((t) => ({
+          id: t._id,
+          title: t.name,
+          content: t.description || "",
+          timestamp: t.createdAt || t.startDate,
+          author: t.createdBy ? "Admin" : "Admin",
+          category: "Tournament",
+          imageUrl: t.image ? `${t.image.startsWith("http") ? t.image : `${fileBaseUrl}${t.image}`}` : undefined,
+          location: t.location,
+          date: t.startDate,
+        }));
+        setPosts(mapped);
+        const total = resp?.data?.pagination?.total ?? mapped.length;
+        const pages = resp?.data?.pagination?.pages ?? 1;
+        setHasMore(pages > 1);
+        setPage(1);
       } catch (error) {
-        console.log('No posts yet or error loading, using dummy posts:', error);
-        // Use dummy posts on error
+        console.log('Error loading tournaments, using dummy posts:', error);
         setPosts(dummyPosts);
+        setHasMore(false);
       } finally {
         setLoading(false);
       }
     };
+    loadInitial();
+  }, [fileBaseUrl]);
 
-    loadPosts();
-  }, []);
+  const loadMore = async () => {
+    if (isLoadingMore || !hasMore) return;
+    try {
+      setIsLoadingMore(true);
+      const nextPage = page + 1;
+      const resp = await tournamentAPI.getAllTournaments({ limit, page: nextPage });
+      const items: Tournament[] = resp?.data?.tournaments || [];
+      const mapped: Post[] = items.map((t) => ({
+        id: t._id,
+        title: t.name,
+        content: t.description || "",
+        timestamp: t.createdAt || t.startDate,
+        author: t.createdBy ? "Admin" : "Admin",
+        category: "Tournament",
+        imageUrl: t.image ? `${t.image.startsWith("http") ? t.image : `${fileBaseUrl}${t.image}`}` : undefined,
+        location: t.location,
+        date: t.startDate,
+      }));
+      setPosts((prev) => [...prev, ...mapped]);
+      const pages = resp?.data?.pagination?.pages ?? nextPage;
+      setHasMore(nextPage < pages);
+      setPage(nextPage);
+    } catch (error) {
+      console.log('Error loading more tournaments:', error);
+      setHasMore(false);
+    } finally {
+      setIsLoadingMore(false);
+    }
+  };
 
   const formatDate = (timestamp: string) => {
     const date = new Date(timestamp);
@@ -241,8 +284,8 @@ const Home = () => {
             </div>
             
             <div className="text-center mt-8">
-              <Button variant="outline" size="lg">
-                View All Posts
+              <Button variant="outline" size="lg" onClick={loadMore} disabled={!hasMore || isLoadingMore}>
+                {isLoadingMore ? 'Loading…' : hasMore ? 'More Tournaments' : 'No More Tournaments'}
               </Button>
             </div>
           </div>

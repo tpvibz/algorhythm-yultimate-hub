@@ -73,7 +73,7 @@ const TournamentCard = ({ tournament }: { tournament: Tournament }) => {
       {tournament.image && (
         <div className="mb-4 rounded-lg overflow-hidden">
           <img 
-            src={`http://localhost:5000${tournament.image}`} 
+            src={`http://localhost:9000${tournament.image}`} 
             alt={tournament.name}
             className="w-full h-32 object-cover"
           />

@@ -15,15 +15,18 @@ import {
   RefreshCw, 
   Clock,
   MapPin,
-  TrendingUp
+  TrendingUp,
+  AlertCircle
 } from "lucide-react";
-import { scoreAPI, scheduleAPI, Match, handleAPIError } from "@/services/api";
+import { scoreAPI, scheduleAPI, matchAttendanceAPI, Match, handleAPIError } from "@/services/api";
+import { Link } from "react-router-dom";
 
 const LiveScoringTab = () => {
   const [matches, setMatches] = useState<Match[]>([]);
   const [selectedMatch, setSelectedMatch] = useState<Match | null>(null);
   const [loading, setLoading] = useState(true);
   const [updating, setUpdating] = useState<string | null>(null);
+  const [attendanceStatus, setAttendanceStatus] = useState<any>(null);
 
   useEffect(() => {
     fetchMatches();
@@ -32,10 +35,17 @@ const LiveScoringTab = () => {
       fetchMatches();
       if (selectedMatch) {
         fetchMatchDetails(selectedMatch._id);
+        checkAttendanceStatus(selectedMatch._id);
       }
     }, 5000);
 
     return () => clearInterval(interval);
+  }, [selectedMatch]);
+
+  useEffect(() => {
+    if (selectedMatch) {
+      checkAttendanceStatus(selectedMatch._id);
+    }
   }, [selectedMatch]);
 
   const fetchMatches = async () => {
@@ -77,6 +87,18 @@ const LiveScoringTab = () => {
     }
   };
 
+  const checkAttendanceStatus = async (matchId: string) => {
+    try {
+      const response = await matchAttendanceAPI.checkAttendanceStatus(matchId);
+      if (response.success) {
+        setAttendanceStatus(response.data.attendance);
+      }
+    } catch (error) {
+      console.error("Error checking attendance status:", error);
+      setAttendanceStatus(null);
+    }
+  };
+
   const handleRecordScore = async (team: 'A' | 'B', points: number = 1) => {
     if (!selectedMatch) return;
 
@@ -93,8 +115,13 @@ const LiveScoringTab = () => {
 
       toast.success(`+${points} point(s) for ${team === 'A' ? selectedMatch.teamA.teamName : selectedMatch.teamB.teamName}`);
       await fetchMatchDetails(selectedMatch._id);
+      await checkAttendanceStatus(selectedMatch._id);
     } catch (error) {
-      toast.error(handleAPIError(error));
+      const errorMessage = handleAPIError(error);
+      toast.error(errorMessage);
+      if (errorMessage.includes("Attendance must be completed")) {
+        await checkAttendanceStatus(selectedMatch._id);
+      }
     } finally {
       setUpdating(null);
     }
@@ -118,8 +145,13 @@ const LiveScoringTab = () => {
 
       toast.success("Score updated");
       await fetchMatchDetails(selectedMatch._id);
+      await checkAttendanceStatus(selectedMatch._id);
     } catch (error) {
-      toast.error(handleAPIError(error));
+      const errorMessage = handleAPIError(error);
+      toast.error(errorMessage);
+      if (errorMessage.includes("Attendance must be completed")) {
+        await checkAttendanceStatus(selectedMatch._id);
+      }
     } finally {
       setUpdating(null);
     }
@@ -139,8 +171,13 @@ const LiveScoringTab = () => {
 
       toast.success(`Match status updated to ${newStatus}`);
       await fetchMatchDetails(selectedMatch._id);
+      await checkAttendanceStatus(selectedMatch._id);
     } catch (error) {
-      toast.error(handleAPIError(error));
+      const errorMessage = handleAPIError(error);
+      toast.error(errorMessage);
+      if (errorMessage.includes("Attendance must be completed")) {
+        await checkAttendanceStatus(selectedMatch._id);
+      }
     } finally {
       setUpdating(null);
     }
@@ -373,6 +410,36 @@ const LiveScoringTab = () => {
                     </div>
                   </div>
 
+                  {/* Attendance Warning */}
+                  {attendanceStatus && !attendanceStatus.isComplete && selectedMatch.status === 'scheduled' && (
+                    <div className="p-4 bg-yellow-50 dark:bg-yellow-950 border border-yellow-200 dark:border-yellow-800 rounded-lg">
+                      <div className="flex items-start gap-2">
+                        <AlertCircle className="h-5 w-5 text-yellow-600 mt-0.5 flex-shrink-0" />
+                        <div className="flex-1">
+                          <div className="font-medium text-yellow-800 dark:text-yellow-200">
+                            Attendance Required
+                          </div>
+                          <div className="text-sm text-yellow-700 dark:text-yellow-300 mt-1">
+                            You must mark attendance for all players before starting the match or recording scores.
+                            ({attendanceStatus.attendanceCount} of {attendanceStatus.totalPlayers} players marked - {attendanceStatus.percentage}%)
+                          </div>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="mt-2 border-yellow-300 text-yellow-800 hover:bg-yellow-100 dark:border-yellow-700 dark:text-yellow-200 dark:hover:bg-yellow-900"
+                            onClick={() => {
+                              // Navigate to attendance tab (you can use a state management or router)
+                              window.location.hash = '#attendance';
+                              toast.info("Please mark attendance for all players in the Attendance tab");
+                            }}
+                          >
+                            Go to Attendance Tab
+                          </Button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
                   {/* Score Display */}
                   <div className="grid grid-cols-2 gap-6">
                     {/* Team A */}
@@ -391,7 +458,7 @@ const LiveScoringTab = () => {
                             size="sm"
                             variant="outline"
                             onClick={() => handleRecordScore('A', 1)}
-                            disabled={updating === 'score' || selectedMatch.status === 'completed'}
+                            disabled={updating === 'score' || selectedMatch.status === 'completed' || (attendanceStatus && !attendanceStatus.isComplete && selectedMatch.status === 'scheduled')}
                             className="flex-1"
                           >
                             <Plus className="h-4 w-4 mr-1" />
@@ -404,7 +471,7 @@ const LiveScoringTab = () => {
                               const newScore = Math.max(0, (selectedMatch.score?.teamA || 0) - 1);
                               handleUpdateScore('A', newScore);
                             }}
-                            disabled={updating === 'score' || selectedMatch.status === 'completed'}
+                            disabled={updating === 'score' || selectedMatch.status === 'completed' || (attendanceStatus && !attendanceStatus.isComplete && selectedMatch.status === 'scheduled')}
                           >
                             <Minus className="h-4 w-4" />
                           </Button>
@@ -419,7 +486,7 @@ const LiveScoringTab = () => {
                               handleUpdateScore('A', value);
                             }
                           }}
-                          disabled={updating === 'score' || selectedMatch.status === 'completed'}
+                          disabled={updating === 'score' || selectedMatch.status === 'completed' || (attendanceStatus && !attendanceStatus.isComplete && selectedMatch.status === 'scheduled')}
                           className="text-center text-2xl font-bold"
                         />
                       </div>
@@ -441,7 +508,7 @@ const LiveScoringTab = () => {
                             size="sm"
                             variant="outline"
                             onClick={() => handleRecordScore('B', 1)}
-                            disabled={updating === 'score' || selectedMatch.status === 'completed'}
+                            disabled={updating === 'score' || selectedMatch.status === 'completed' || (attendanceStatus && !attendanceStatus.isComplete && selectedMatch.status === 'scheduled')}
                             className="flex-1"
                           >
                             <Plus className="h-4 w-4 mr-1" />
@@ -454,7 +521,7 @@ const LiveScoringTab = () => {
                               const newScore = Math.max(0, (selectedMatch.score?.teamB || 0) - 1);
                               handleUpdateScore('B', newScore);
                             }}
-                            disabled={updating === 'score' || selectedMatch.status === 'completed'}
+                            disabled={updating === 'score' || selectedMatch.status === 'completed' || (attendanceStatus && !attendanceStatus.isComplete && selectedMatch.status === 'scheduled')}
                           >
                             <Minus className="h-4 w-4" />
                           </Button>
@@ -469,7 +536,7 @@ const LiveScoringTab = () => {
                               handleUpdateScore('B', value);
                             }
                           }}
-                          disabled={updating === 'score' || selectedMatch.status === 'completed'}
+                          disabled={updating === 'score' || selectedMatch.status === 'completed' || (attendanceStatus && !attendanceStatus.isComplete && selectedMatch.status === 'scheduled')}
                           className="text-center text-2xl font-bold"
                         />
                       </div>
@@ -481,7 +548,7 @@ const LiveScoringTab = () => {
                     {selectedMatch.status === 'scheduled' && (
                       <Button
                         onClick={() => handleStatusChange('ongoing')}
-                        disabled={updating === 'status'}
+                        disabled={updating === 'status' || (attendanceStatus && !attendanceStatus.isComplete)}
                         className="flex-1"
                       >
                         <Play className="h-4 w-4 mr-2" />
@@ -497,6 +564,22 @@ const LiveScoringTab = () => {
                         <CheckCircle2 className="h-4 w-4 mr-2" />
                         Complete Match
                       </Button>
+                    )}
+                    {selectedMatch.status === 'completed' && (
+                      <div className="flex flex-col md:flex-row gap-2 w-full">
+                        <Link
+                          to={`/volunteer/player-stats-entry?matchId=${selectedMatch._id}&teamId=${selectedMatch.teamA._id}`}
+                          className="flex-1"
+                        >
+                          <Button variant="outline" className="w-full">Player's stat update - {selectedMatch.teamA.teamName}</Button>
+                        </Link>
+                        <Link
+                          to={`/volunteer/player-stats-entry?matchId=${selectedMatch._id}&teamId=${selectedMatch.teamB._id}`}
+                          className="flex-1"
+                        >
+                          <Button variant="outline" className="w-full">Player's stat update - {selectedMatch.teamB.teamName}</Button>
+                        </Link>
+                      </div>
                     )}
                   </div>
 

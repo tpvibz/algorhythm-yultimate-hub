@@ -1,6 +1,7 @@
 import Attendance from "../models/attendanceModel.js";
 import Session from "../models/sessionModel.js";
 import Person from "../models/personModel.js";
+import { createNotificationsForUsers } from "./notificationController.js";
 
 /* ✅ MARK ATTENDANCE FOR SESSION */
 export const markAttendance = async (req, res) => {
@@ -91,6 +92,23 @@ export const markAttendance = async (req, res) => {
       } catch (error) {
         errors.push({ playerId: record.playerId, error: error.message });
       }
+    }
+
+    // Notify players about attendance being recorded
+    try {
+      const playerIds = results.map(r => r.playerId).filter(id => id);
+      if (playerIds.length > 0 && session) {
+        const sessionDate = new Date(session.scheduledStart || Date.now()).toLocaleDateString();
+        await createNotificationsForUsers(
+          playerIds,
+          "attendance_recorded",
+          "Attendance Recorded",
+          `Your attendance has been recorded for session "${session.title}" on ${sessionDate}.`,
+          { relatedEntityId: sessionId, relatedEntityType: "session" }
+        );
+      }
+    } catch (notificationError) {
+      console.error("Error creating notifications for attendance:", notificationError);
     }
 
     res.status(200).json({

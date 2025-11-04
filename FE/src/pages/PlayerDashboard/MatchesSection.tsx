@@ -20,7 +20,7 @@ const MatchesSection = ({ playerId }: MatchesSectionProps) => {
   const fetchMatches = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:5000/api/player/${playerId}/matches`);
+      const response = await fetch(`http://localhost:9000/api/player/${playerId}/matches`);
       if (response.ok) {
         const data = await response.json();
         setMatches(data);

@@ -71,13 +71,13 @@ const TeamRegisterForm = ({ open, onOpenChange, tournament }) => {
       }
 
       // Use new endpoint that includes affiliation
-      const response = await fetch(`http://localhost:5000/api/institutions/coaches/${coachId}/players`);
+      const response = await fetch(`http://localhost:9000/api/institutions/coaches/${coachId}/players`);
       if (response.ok) {
         const data = await response.json();
         setAssignedPlayers(data);
       } else {
         // Fallback to old endpoint
-        const fallbackResponse = await fetch(`http://localhost:5000/api/students/coach/${coachId}`);
+        const fallbackResponse = await fetch(`http://localhost:9000/api/students/coach/${coachId}`);
         if (fallbackResponse.ok) {
           const data = await fallbackResponse.json();
           setAssignedPlayers(data);
@@ -153,7 +153,7 @@ const TeamRegisterForm = ({ open, onOpenChange, tournament }) => {
         coachId,
       };
 
-      const res = await fetch("http://localhost:5000/api/teams", {
+      const res = await fetch("http://localhost:9000/api/teams", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

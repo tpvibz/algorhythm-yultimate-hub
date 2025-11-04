@@ -57,7 +57,7 @@ const TournamentList = ({ onSelect, onClose, onRegister }) => {
       setError(null);
       try {
         // call the working API (user provided)
-        const res = await fetch("http://localhost:5000/api/tournaments", { cache: "no-store" });
+        const res = await fetch("http://localhost:9000/api/tournaments", { cache: "no-store" });
         if (!res.ok) throw new Error(`Status ${res.status}`);
         const json = await res.json();
 

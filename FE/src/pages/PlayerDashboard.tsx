@@ -1,15 +1,118 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Trophy, Calendar, Target, Star, TrendingUp, Award } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import BottomNav from "@/components/BottomNav";
+import PlayerAIChat from "@/components/PlayerAIChat";
+import { playerStatsAPI } from "@/services/api";
+import { handleAPIError } from "@/services/api";
 
 const PlayerDashboard = () => {
+  const [playerStats, setPlayerStats] = useState<any[]>([]);
+  const [recentMatches, setRecentMatches] = useState<any[]>([]);
+  const [loading, setLoading] = useState(true);
+  
   const stats = [
     { icon: Trophy, label: "Tournaments Played", value: "12", change: "+2 this month" },
     { icon: Target, label: "Spirit Score Avg", value: "15.8", change: "Top 10%" },
     { icon: Star, label: "Team Rank", value: "#3", change: "In division" },
     { icon: Award, label: "Achievements", value: "8", change: "2 new!" }
   ];
+
+  useEffect(() => {
+    fetchPlayerData();
+  }, []);
+
+  const fetchPlayerData = async () => {
+    try {
+      setLoading(true);
+      
+      // Get current user from localStorage
+      const currentUser = JSON.parse(localStorage.getItem('currentUser') || '{}');
+      const playerId = currentUser?.id || currentUser?._id;
+      
+      if (!playerId) {
+        console.log('No player ID found');
+        setLoading(false);
+        return;
+      }
+
+      // Fetch player stats
+      const statsResponse = await playerStatsAPI.getPlayerStats(playerId);
+      if (statsResponse.success) {
+        setPlayerStats(statsResponse.data.stats || []);
+      }
+
+      // Prepare recent matches data (mock data for now - can be enhanced with real API)
+      const mockRecentMatches = [
+        {
+          id: '1',
+          date: '2025-05-01',
+          opponent: 'Thunder Hawks',
+          result: 'Win 15-8',
+          yourScore: '8',
+          opponentScore: '15',
+          fieldName: 'Field A'
+        },
+        {
+          id: '2',
+          date: '2025-04-28',
+          opponent: 'Storm Riders',
+          result: 'Loss 12-15',
+          yourScore: '15',
+          opponentScore: '12',
+          fieldName: 'Central Park'
+        },
+        {
+          id: '3',
+          date: '2025-04-25',
+          opponent: 'Sky Warriors',
+          result: 'Win 17-13',
+          yourScore: '17',
+          opponentScore: '13',
+          fieldName: 'Field B'
+        }
+      ];
+      setRecentMatches(mockRecentMatches);
+
+    } catch (error) {
+      console.error('Error fetching player data:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const performanceGoals = [
+    "Improve throw accuracy",
+    "Better defensive positioning",
+    "Increase game awareness",
+    "Faster decision making"
+  ];
+
+  const currentChallenges = [
+    "Handling pressure situations",
+    "Long throws under wind",
+    "Quick transitions",
+    "Communication with teammates"
+  ];
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Navbar />
+        <div className="pt-20 px-4">
+          <div className="container mx-auto">
+            <div className="flex justify-center items-center h-64">
+              <div className="text-center">
+                <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-purple-600 mx-auto"></div>
+                <p className="text-muted-foreground mt-4">Loading your dashboard...</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -35,8 +138,8 @@ const PlayerDashboard = () => {
           {/* Stats Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
             {stats.map((stat, index) => (
-              <Card 
-                key={index} 
+              <Card
+                key={index}
                 className="glass-card glass-hover hover:-translate-y-1 animate-slide-up"
                 style={{ animationDelay: `${index * 0.05}s` }}
               >
@@ -64,24 +167,23 @@ const PlayerDashboard = () => {
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
                   <Calendar className="h-5 w-5" />
-                  Upcoming Matches
+                  Recent Matches
                 </CardTitle>
               </CardHeader>
               <CardContent className="space-y-4">
-                {[
-                  { opponent: "Thunder Hawks", date: "May 15, 10:00 AM", field: "Field A", type: "League" },
-                  { opponent: "Storm Riders", date: "May 18, 3:00 PM", field: "Central Park", type: "Friendly" },
-                  { opponent: "Sky Warriors", date: "May 22, 2:00 PM", field: "Field B", type: "Championship" }
-                ].map((match, index) => (
+                {recentMatches.map((match, index) => (
                   <div key={index} className="p-4 rounded-lg bg-gradient-to-r from-purple-500/5 to-purple-600/5 hover:from-purple-500/10 hover:to-purple-600/10 transition-all border border-purple-500/10">
                     <div className="flex items-start justify-between">
                       <div>
                         <p className="font-medium text-lg">vs {match.opponent}</p>
                         <p className="text-sm text-muted-foreground mt-1">{match.date}</p>
-                        <p className="text-sm text-muted-foreground">{match.field}</p>
+                        <p className="text-sm text-muted-foreground">{match.fieldName}</p>
+                        <p className="text-sm font-medium mt-1">{match.result}</p>
                       </div>
-                      <span className="text-xs px-3 py-1 rounded-full bg-purple-500/10 text-purple-600">
-                        {match.type}
+                      <span className={`text-xs px-3 py-1 rounded-full ${
+                        match.result.includes('Win') ? 'bg-green-500/10 text-green-600' : 'bg-red-500/10 text-red-600'
+                      }`}>
+                        {match.result.includes('Win') ? 'Win' : 'Loss'}
                       </span>
                     </div>
                   </div>
@@ -119,6 +221,14 @@ const PlayerDashboard = () => {
         </div>
       </div>
       <BottomNav />
+      
+      {/* AI Performance Coach */}
+      <PlayerAIChat
+        playerStats={playerStats}
+        recentMatches={recentMatches}
+        performanceGoals={performanceGoals}
+        currentChallenges={currentChallenges}
+      />
     </div>
   );
 };

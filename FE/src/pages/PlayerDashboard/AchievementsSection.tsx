@@ -21,7 +21,7 @@ const AchievementsSection = ({ playerId, fullWidth }: AchievementsSectionProps) 
   const fetchAchievements = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:5000/api/player/${playerId}/achievements`);
+      const response = await fetch(`http://localhost:9000/api/player/${playerId}/achievements`);
       if (response.ok) {
         const data = await response.json();
         setAchievements(data);

@@ -1,5 +1,5 @@
 import express from "express";
-import { createTeam, getMyTeams } from "../controllers/teamController.js";
+import { createTeam, getMyTeams, getAllTeams } from "../controllers/teamController.js";
 import { protect } from "../middleware/authMiddleware.js";
 
 const router = express.Router();
@@ -9,5 +9,8 @@ router.post("/", createTeam);
 
 // Get teams for the current coach
 router.get("/mine", protect, getMyTeams);
+
+// Get all teams with stats
+router.get("/", getAllTeams);
 
 export default router;

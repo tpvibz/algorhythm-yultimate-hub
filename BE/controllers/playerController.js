@@ -7,6 +7,7 @@ import Match from "../models/matchModel.js";
 import Team from "../models/teamModel.js";
 import Tournament from "../models/tournamentModel.js";
 import School from "../models/schoolModel.js";
+import PlayerMatchFeedback from "../models/playerMatchFeedbackModel.js";
 
 // Get player profile with all details
 export const getPlayerProfile = async (req, res) => {
@@ -151,18 +152,29 @@ export const getPlayerMatches = async (req, res) => {
   try {
     const { id } = req.params;
 
+    // 1) Try to get teams by PlayerProfile.teamId (if present)
     const profile = await PlayerProfile.findOne({ personId: id }).populate("teamId");
 
-    if (!profile || !profile.teamId) {
+    // 2) Also collect teams where this player appears in Team.players[].playerId
+    const teamsContainingPlayer = await Team.find({ "players.playerId": id }).select("_id teamName");
+
+    const teamIds = [];
+    if (profile?.teamId?._id) teamIds.push(profile.teamId._id);
+    for (const t of teamsContainingPlayer) teamIds.push(t._id);
+
+    if (teamIds.length === 0) {
       return res.status(200).json({ upcoming: [], past: [] });
     }
 
-    // Get matches where player's team is involved
+    // Deduplicate teamIds
+    const uniqueTeamIds = [...new Set(teamIds.map((x) => x.toString()))].map((x) => new mongoose.Types.ObjectId(x));
+
+    // 3) Fetch matches where any of these teams participate
     const teamMatches = await Match.find({
-      $or: [{ teamAId: profile.teamId._id }, { teamBId: profile.teamId._id }],
+      $or: uniqueTeamIds.flatMap((tid) => [{ teamAId: tid }, { teamBId: tid }]),
     })
-      .populate("teamAId", "name")
-      .populate("teamBId", "name")
+      .populate("teamAId", "teamName")
+      .populate("teamBId", "teamName")
       .populate("tournamentId", "name")
       .sort({ startTime: 1 });
 
@@ -171,10 +183,16 @@ export const getPlayerMatches = async (req, res) => {
       .filter((m) => new Date(m.startTime) >= now)
       .map((m) => ({
         _id: m._id,
-        opponent:
-          m.teamAId._id.toString() === profile.teamId._id.toString()
-            ? m.teamBId?.name || "TBD"
-            : m.teamAId?.name || "TBD",
+        opponent: (() => {
+          const teamAName = m.teamAId?.teamName || "TBD";
+          const teamBName = m.teamBId?.teamName || "TBD";
+          // If profile has a team, use that to derive opponent; otherwise just show the other side
+          if (profile?.teamId?._id) {
+            return m.teamAId?._id?.toString() === profile.teamId._id.toString() ? teamBName : teamAName;
+          }
+          // If multiple teams include the player, just show "Team A vs Team B" style opponent label
+          return `${teamAName} vs ${teamBName}`;
+        })(),
         date: m.startTime,
         venue: m.fieldName || "TBD",
         type: m.tournamentId ? m.tournamentId.name : "Friendly",
@@ -185,10 +203,14 @@ export const getPlayerMatches = async (req, res) => {
       .filter((m) => new Date(m.startTime) < now)
       .map((m) => ({
         _id: m._id,
-        opponent:
-          m.teamAId._id.toString() === profile.teamId._id.toString()
-            ? m.teamBId?.name || "TBD"
-            : m.teamAId?.name || "TBD",
+        opponent: (() => {
+          const teamAName = m.teamAId?.teamName || "TBD";
+          const teamBName = m.teamBId?.teamName || "TBD";
+          if (profile?.teamId?._id) {
+            return m.teamAId?._id?.toString() === profile.teamId._id.toString() ? teamBName : teamAName;
+          }
+          return `${teamAName} vs ${teamBName}`;
+        })(),
         date: m.startTime,
         venue: m.fieldName || "TBD",
         type: m.tournamentId ? m.tournamentId.name : "Friendly",
@@ -354,6 +376,99 @@ export const getTransferHistory = async (req, res) => {
   } catch (error) {
     console.error("Get transfer history error:", error);
     res.status(500).json({ message: "Failed to fetch transfer history", error: error.message });
+  }
+};
+
+// Get player feedback from coaches
+export const getPlayerFeedback = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const playerProfile = await PlayerProfile.findOne({ personId: id });
+    if (!playerProfile) {
+      return res.status(404).json({ message: "Player profile not found" });
+    }
+
+    // Get all match feedback for this player
+    const matchFeedback = await PlayerMatchFeedback.find({ playerId: id })
+      .populate("matchId", "startTime roundName matchNumber")
+      .populate("tournamentId", "name location startDate endDate")
+      .populate("coachId", "firstName lastName")
+      .populate("teamId", "teamName")
+      .sort({ submittedAt: -1 });
+
+    // Also get feedback from player profile (legacy feedback)
+    const profileFeedback = playerProfile.feedback || [];
+    const legacyFeedback = await Promise.all(
+      profileFeedback.map(async (fb) => {
+        const coach = await Person.findById(fb.coachId).select("firstName lastName");
+        return {
+          _id: fb._id || new mongoose.Types.ObjectId(),
+          coach: coach
+            ? {
+                _id: coach._id,
+                name: `${coach.firstName} ${coach.lastName}`,
+              }
+            : null,
+          score: fb.rating ? `${Math.round((fb.rating / 10) * 7)}/7` : null,
+          feedback: fb.comments,
+          date: fb.date,
+          matchId: fb.matchId || null,
+          source: "profile",
+        };
+      })
+    );
+
+    // Format match feedback
+    const formattedMatchFeedback = matchFeedback.map((fb) => ({
+      _id: fb._id,
+      coach: fb.coachId
+        ? {
+            _id: fb.coachId._id,
+            name: `${fb.coachId.firstName} ${fb.coachId.lastName}`,
+          }
+        : null,
+      score: fb.score,
+      feedback: fb.feedback,
+      date: fb.submittedAt,
+      match: fb.matchId
+        ? {
+            _id: fb.matchId._id,
+            roundName: fb.matchId.roundName,
+            matchNumber: fb.matchId.matchNumber,
+            startTime: fb.matchId.startTime,
+          }
+        : null,
+      tournament: fb.tournamentId
+        ? {
+            _id: fb.tournamentId._id,
+            name: fb.tournamentId.name,
+            location: fb.tournamentId.location,
+            startDate: fb.tournamentId.startDate,
+            endDate: fb.tournamentId.endDate,
+          }
+        : null,
+      team: fb.teamId
+        ? {
+            _id: fb.teamId._id,
+            teamName: fb.teamId.teamName,
+          }
+        : null,
+      source: "match",
+    }));
+
+    // Combine and sort by date
+    const allFeedback = [...formattedMatchFeedback, ...legacyFeedback].sort(
+      (a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()
+    );
+
+    res.status(200).json({
+      feedback: allFeedback,
+      count: allFeedback.length,
+    });
+  } catch (error) {
+    console.error("Get player feedback error:", error);
+    res.status(500).json({ message: "Failed to fetch player feedback", error: error.message });
   }
 };
 

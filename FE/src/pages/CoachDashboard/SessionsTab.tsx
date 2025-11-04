@@ -2,9 +2,10 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { Calendar, Users, Plus, CheckCircle, X } from "lucide-react";
+import { Calendar, Users, Plus, CheckCircle, X, BarChart } from "lucide-react";
 import { toast } from "sonner";
 import { Checkbox } from "@/components/ui/checkbox";
+import { ResponsiveContainer, BarChart as ReBarChart, Bar, XAxis, YAxis, Tooltip, PieChart, Pie, Cell, Legend } from "recharts";
 
 interface Session {
   _id: string;
@@ -48,6 +49,7 @@ const SessionsTab = () => {
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<string[]>([]);
   const [addingPlayers, setAddingPlayers] = useState(false);
   const [coachId, setCoachId] = useState<string | null>(null);
+  const [visualizeOpen, setVisualizeOpen] = useState(false);
 
   useEffect(() => {
     // Get coach ID from localStorage (stored during login)
@@ -65,7 +67,7 @@ const SessionsTab = () => {
   const fetchSessions = async (coachId: string) => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:5000/api/sessions/coach/${coachId}`);
+      const response = await fetch(`http://localhost:9000/api/sessions/coach/${coachId}`);
       const data = await response.json();
       if (response.ok) {
         setSessions(data);
@@ -81,7 +83,7 @@ const SessionsTab = () => {
 
   const fetchPlayers = async () => {
     try {
-      const response = await fetch("http://localhost:5000/api/sessions/players/list");
+      const response = await fetch("http://localhost:9000/api/sessions/players/list");
       const data = await response.json();
       if (response.ok) {
         setPlayers(data);
@@ -117,7 +119,7 @@ const SessionsTab = () => {
 
     try {
       setAddingPlayers(true);
-      const response = await fetch(`http://localhost:5000/api/sessions/${selectedSessionId}/players`, {
+      const response = await fetch(`http://localhost:9000/api/sessions/${selectedSessionId}/players`, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ playerIds: selectedPlayerIds }),
@@ -166,10 +168,20 @@ const SessionsTab = () => {
     <div className="space-y-6">
       <Card className="glass-card glass-hover animate-slide-up">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Calendar className="h-5 w-5" />
-            My Sessions
-          </CardTitle>
+          <div className="flex items-center gap-2">
+            <CardTitle className="flex items-center gap-2">
+              <Calendar className="h-5 w-5" />
+              My Sessions
+            </CardTitle>
+            <Button
+              variant="outline"
+              size="sm"
+              className="ml-auto border-orange-600 text-orange-600 hover:bg-orange-600 hover:text-white transition-all"
+              onClick={() => setVisualizeOpen(true)}
+            >
+              <BarChart className="h-4 w-4 mr-1" /> Visualize
+            </Button>
+          </div>
         </CardHeader>
         <CardContent>
           {loading ? (
@@ -248,6 +260,93 @@ const SessionsTab = () => {
           )}
         </CardContent>
       </Card>
+
+      {/* Session Insights Dialog */}
+      <Dialog open={visualizeOpen} onOpenChange={setVisualizeOpen}>
+        <DialogContent className="max-w-3xl">
+          <DialogHeader>
+            <DialogTitle>Session Insights</DialogTitle>
+            <DialogDescription>Overview of your coaching sessions and player engagement.</DialogDescription>
+          </DialogHeader>
+          <div className="space-y-6 animate-fade-in">
+            {(() => {
+              const totalSessions = sessions.length;
+              const totalPlayers = sessions.reduce((sum, s) => sum + (s.enrolledPlayers?.length || 0), 0);
+              const avgPlayers = totalSessions ? (totalPlayers / totalSessions).toFixed(1) : 0;
+              return (
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-2">
+                  <Card className="bg-orange-500/10 border border-orange-500/20 text-center p-4">
+                    <p className="text-sm text-muted-foreground">Total Sessions</p>
+                    <p className="text-2xl font-semibold text-orange-600">{totalSessions}</p>
+                  </Card>
+                  <Card className="bg-orange-500/10 border border-orange-500/20 text-center p-4">
+                    <p className="text-sm text-muted-foreground">Total Players Enrolled</p>
+                    <p className="text-2xl font-semibold text-orange-600">{totalPlayers}</p>
+                  </Card>
+                  <Card className="bg-orange-500/10 border border-orange-500/20 text-center p-4">
+                    <p className="text-sm text-muted-foreground">Avg Players / Session</p>
+                    <p className="text-2xl font-semibold text-orange-600">{avgPlayers}</p>
+                  </Card>
+                </div>
+              );
+            })()}
+
+            {/* Players per Session Bar Chart */}
+            <div className="h-64 mb-2">
+              <h3 className="text-sm font-medium mb-2">Players per Session</h3>
+              {sessions.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <ReBarChart data={sessions.map(s => ({ name: s.title, players: s.enrolledPlayers?.length || 0 }))}>
+                    <XAxis dataKey="name" tick={{ fontSize: 10 }} interval={0} angle={-15} height={50} textAnchor="end" />
+                    <YAxis />
+                    <Tooltip />
+                    <Bar dataKey="players" radius={[8,8,0,0]}>
+                      {sessions.map((_, idx) => (
+                        <Cell key={idx} fill="#f97316" />
+                      ))}
+                    </Bar>
+                  </ReBarChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-full flex items-center justify-center text-muted-foreground">No data available</div>
+              )}
+            </div>
+
+            {/* Session Type Distribution Pie Chart */}
+            <div className="h-64">
+              <h3 className="text-sm font-medium mb-2">Session Type Distribution</h3>
+              {sessions.length > 0 ? (
+                <ResponsiveContainer width="100%" height="100%">
+                  <PieChart>
+                    <Pie
+                      data={[
+                        { name: "Training", value: sessions.filter(s => s.type === "training").length },
+                        { name: "Workshop", value: sessions.filter(s => s.type === "workshop").length },
+                      ]}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      outerRadius={80}
+                      dataKey="value"
+                    >
+                      {["#f97316", "#9333ea"].map((color, index) => (
+                        <Cell key={index} fill={color} />
+                      ))}
+                    </Pie>
+                    <Tooltip />
+                    <Legend />
+                  </PieChart>
+                </ResponsiveContainer>
+              ) : (
+                <div className="h-full flex items-center justify-center text-muted-foreground">No data available</div>
+              )}
+            </div>
+          </div>
+          <DialogFooter>
+            <Button onClick={() => setVisualizeOpen(false)} variant="outline">Close</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Add Players Dialog */}
       <Dialog open={showAddPlayers} onOpenChange={setShowAddPlayers}>

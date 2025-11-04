@@ -22,7 +22,7 @@ const AttendanceSection = ({ playerId }: AttendanceSectionProps) => {
   const fetchAttendance = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:5000/api/player/${playerId}/attendance`);
+      const response = await fetch(`http://localhost:9000/api/player/${playerId}/attendance`);
       if (response.ok) {
         const data = await response.json();
         setAttendance(data);

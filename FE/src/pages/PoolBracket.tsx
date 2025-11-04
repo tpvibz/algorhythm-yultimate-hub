@@ -5,62 +5,104 @@ import ReactFlow, {
   Handle,
   Position,
   Node,
-  Edge
+  Edge,
+  MarkerType
 } from 'reactflow';
 import 'reactflow/dist/style.css';
 import Navbar from "@/components/Navbar";
 import BottomNav from "@/components/BottomNav";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Trophy, RefreshCw, Clock, Award } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Trophy, RefreshCw, Clock, Award, CheckCircle2, PlayCircle } from "lucide-react";
 import { toast } from "sonner";
 import { tournamentAPI, scheduleAPI, Tournament, Team, Match, handleAPIError } from "@/services/api";
 
-// Custom Node Components
-const TeamNode = ({ data }: { data: any }) => (
-  <div className="glass-card p-3 hover:shadow-lg transition-all min-w-[140px] border-2 border-blue-500/50">
-    <Handle type="target" position={Position.Left} className="w-2 h-2 opacity-0" />
-    <Handle type="source" position={Position.Right} className="w-2 h-2 opacity-0" />
-    <div className="font-semibold text-center">{data.label}</div>
-    {data.pool && <div className="text-xs text-muted-foreground text-center mt-1">{data.pool}</div>}
-    {data.record && (
-      <div className="text-xs text-center mt-1 text-muted-foreground">
-        {data.record.wins}-{data.record.losses}
-      </div>
-    )}
-  </div>
-);
-
+// Enhanced Custom Node Components
 const MatchNode = ({ data }: { data: any }) => {
   const isCompleted = data.status === 'completed';
   const isOngoing = data.status === 'ongoing';
+  const isScheduled = data.status === 'scheduled';
   
   return (
-    <div className={`glass-card p-4 hover:shadow-lg transition-all min-w-[180px] ${isCompleted ? 'border-2 border-green-500/50' : isOngoing ? 'border-2 border-yellow-500/50' : ''}`}>
-      <Handle type="target" position={Position.Left} className="w-2 h-2 opacity-0" />
-      <Handle type="source" position={Position.Right} className="w-2 h-2 opacity-0" />
-      {data.label && <div className="text-center text-xs text-muted-foreground mb-2">{data.label}</div>}
+    <div className={`relative glass-card p-4 hover:shadow-lg transition-all min-w-[200px] ${
+      isCompleted ? 'border-2 border-green-500/50 bg-green-500/5' : 
+      isOngoing ? 'border-2 border-yellow-500/50 bg-yellow-500/5' : 
+      'border-2 border-blue-500/30 bg-blue-500/5'
+    }`}>
+      <Handle type="target" position={Position.Left} className="!w-3 !h-3 !bg-primary" />
+      <Handle type="source" position={Position.Right} className="!w-3 !h-3 !bg-primary" />
+      
+      {/* Round Label */}
+      <div className="text-center text-xs font-bold text-primary mb-2 uppercase tracking-wide">
+        {data.roundName || `Round ${data.round || 1}`}
+      </div>
+      
+      {/* Match Info */}
       <div className="space-y-2">
-        <div className="flex justify-between items-center">
-          <span className={`font-semibold text-sm ${data.teamAWinner ? 'text-green-600' : ''}`}>
+        {/* Team A */}
+        <div className={`flex justify-between items-center p-2 rounded ${
+          data.teamAWinner ? 'bg-green-500/20 font-bold' : 'bg-secondary/20'
+        }`}>
+          <span className={`text-sm truncate flex-1 ${data.teamAWinner ? 'text-green-600' : ''}`}>
             {data.teamA || 'TBD'}
           </span>
-          {isCompleted && data.score && (
-            <span className="font-bold">{data.score.teamA}</span>
+          {data.score && (
+            <span className={`font-bold ml-2 ${data.teamAWinner ? 'text-green-600' : ''}`}>
+              {data.score.teamA}
+            </span>
           )}
         </div>
+        
+        {/* VS Separator */}
         <div className="text-center text-xs text-muted-foreground">vs</div>
-        <div className="flex justify-between items-center">
-          <span className={`font-semibold text-sm ${data.teamBWinner ? 'text-green-600' : ''}`}>
+        
+        {/* Team B */}
+        <div className={`flex justify-between items-center p-2 rounded ${
+          data.teamBWinner ? 'bg-green-500/20 font-bold' : 'bg-secondary/20'
+        }`}>
+          <span className={`text-sm truncate flex-1 ${data.teamBWinner ? 'text-green-600' : ''}`}>
             {data.teamB || 'TBD'}
           </span>
-          {isCompleted && data.score && (
-            <span className="font-bold">{data.score.teamB}</span>
+          {data.score && (
+            <span className={`font-bold ml-2 ${data.teamBWinner ? 'text-green-600' : ''}`}>
+              {data.score.teamB}
+            </span>
           )}
         </div>
+        
+        {/* Status and Time */}
+        <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/50">
+          <Badge variant={isCompleted ? "default" : isOngoing ? "secondary" : "outline"} className="text-xs">
+            {isCompleted ? (
+              <span className="flex items-center gap-1">
+                <CheckCircle2 className="h-3 w-3" />
+                Completed
+              </span>
+            ) : isOngoing ? (
+              <span className="flex items-center gap-1">
+                <PlayCircle className="h-3 w-3" />
+                Live
+              </span>
+            ) : (
+              "Scheduled"
+            )}
+          </Badge>
+          {data.matchNumber && (
+            <span className="text-xs text-muted-foreground">#{data.matchNumber}</span>
+          )}
+        </div>
+        
+        {/* Start Time */}
         {data.startTime && (
-          <div className="text-xs text-center text-muted-foreground mt-2">
-            {new Date(data.startTime).toLocaleDateString()}
+          <div className="text-xs text-center text-muted-foreground mt-1">
+            <Clock className="h-3 w-3 inline mr-1" />
+            {new Date(data.startTime).toLocaleDateString("en-US", { 
+              month: "short", 
+              day: "numeric",
+              hour: "2-digit",
+              minute: "2-digit"
+            })}
           </div>
         )}
       </div>
@@ -68,38 +110,103 @@ const MatchNode = ({ data }: { data: any }) => {
   );
 };
 
-const FinalNode = ({ data }: { data: any }) => (
-  <div className="glass-card glass-hover p-6 min-w-[200px] border-2 border-primary/50">
-    <Handle type="target" position={Position.Left} className="w-2 h-2 opacity-0" />
-    <div className="text-center text-sm font-semibold mb-4">FINAL</div>
-    <div className="space-y-3">
-      <div className={`flex justify-between items-center p-2 rounded bg-background/50 ${data.teamAWinner ? 'bg-green-500/20' : ''}`}>
-        <span className={`font-semibold ${data.teamAWinner ? 'text-green-600' : ''}`}>{data.teamA || 'TBD'}</span>
-        {data.score && <span className="font-bold">{data.score.teamA}</span>}
+const EmptyMatchNode = ({ data }: { data: any }) => {
+  return (
+    <div className="relative glass-card p-4 border-2 border-dashed border-muted-foreground/30 bg-muted/10 min-w-[200px] opacity-60">
+      <Handle type="target" position={Position.Left} className="!w-3 !h-3 !bg-muted-foreground/50" />
+      <Handle type="source" position={Position.Right} className="!w-3 !h-3 !bg-muted-foreground/50" />
+      
+      <div className="text-center text-xs font-bold text-muted-foreground mb-2 uppercase tracking-wide">
+        {data.roundName || `Round ${data.round || 1}`}
       </div>
-      <div className="text-center text-xs text-muted-foreground">vs</div>
-      <div className={`flex justify-between items-center p-2 rounded bg-background/50 ${data.teamBWinner ? 'bg-green-500/20' : ''}`}>
-        <span className={`font-semibold ${data.teamBWinner ? 'text-green-600' : ''}`}>{data.teamB || 'TBD'}</span>
-        {data.score && <span className="font-bold">{data.score.teamB}</span>}
+      
+      <div className="space-y-2">
+        <div className="flex justify-between items-center p-2 rounded bg-muted/20">
+          <span className="text-sm text-muted-foreground">TBD</span>
+        </div>
+        <div className="text-center text-xs text-muted-foreground">vs</div>
+        <div className="flex justify-between items-center p-2 rounded bg-muted/20">
+          <span className="text-sm text-muted-foreground">TBD</span>
+        </div>
       </div>
     </div>
-  </div>
-);
+  );
+};
+
+const FinalNode = ({ data }: { data: any }) => {
+  const isCompleted = data.status === 'completed';
+  const isOngoing = data.status === 'ongoing';
+  
+  return (
+    <div className={`relative glass-card glass-hover p-6 min-w-[220px] border-4 ${
+      isCompleted ? 'border-green-500/50 bg-green-500/10' : 
+      isOngoing ? 'border-yellow-500/50 bg-yellow-500/10' : 
+      'border-primary/50 bg-primary/5'
+    }`}>
+      <Handle type="target" position={Position.Left} className="!w-3 !h-3 !bg-primary" />
+      
+      <div className="text-center mb-4">
+        <Trophy className="w-8 h-8 mx-auto mb-2 text-primary" />
+        <div className="text-sm font-bold text-primary uppercase tracking-wider">FINALS</div>
+      </div>
+      
+      <div className="space-y-3">
+        <div className={`flex justify-between items-center p-3 rounded ${
+          data.teamAWinner ? 'bg-green-500/30 font-bold' : 'bg-background/50'
+        }`}>
+          <span className={`font-semibold text-sm flex-1 truncate ${data.teamAWinner ? 'text-green-600' : ''}`}>
+            {data.teamA || 'TBD'}
+          </span>
+          {data.score && (
+            <span className={`font-bold text-lg ml-2 ${data.teamAWinner ? 'text-green-600' : ''}`}>
+              {data.score.teamA}
+            </span>
+          )}
+        </div>
+        <div className="text-center text-xs text-muted-foreground font-semibold">vs</div>
+        <div className={`flex justify-between items-center p-3 rounded ${
+          data.teamBWinner ? 'bg-green-500/30 font-bold' : 'bg-background/50'
+        }`}>
+          <span className={`font-semibold text-sm flex-1 truncate ${data.teamBWinner ? 'text-green-600' : ''}`}>
+            {data.teamB || 'TBD'}
+          </span>
+          {data.score && (
+            <span className={`font-bold text-lg ml-2 ${data.teamBWinner ? 'text-green-600' : ''}`}>
+              {data.score.teamB}
+            </span>
+          )}
+        </div>
+      </div>
+      
+      {data.startTime && (
+        <div className="text-xs text-center text-muted-foreground mt-3 pt-3 border-t border-border/50">
+          <Clock className="h-3 w-3 inline mr-1" />
+          {new Date(data.startTime).toLocaleDateString("en-US", { 
+            month: "short", 
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit"
+          })}
+        </div>
+      )}
+    </div>
+  );
+};
 
 const ChampionNode = ({ data }: { data: any }) => (
-  <div className="glass-card glass-hover p-6 min-w-[160px] border-2 border-primary/50 bg-gradient-to-br from-yellow-500/20 to-yellow-600/20">
-    <Handle type="target" position={Position.Left} className="w-2 h-2 opacity-0" />
+  <div className="relative glass-card glass-hover p-6 min-w-[180px] border-4 border-yellow-500/50 bg-gradient-to-br from-yellow-500/20 to-yellow-600/20">
+    <Handle type="target" position={Position.Left} className="!w-3 !h-3 !bg-yellow-500" />
     <div className="text-center">
-      <Trophy className="w-8 h-8 mx-auto mb-2 text-primary" />
-      <div className="text-sm font-semibold text-muted-foreground mb-2">CHAMPION</div>
-      <div className="font-bold text-lg">{data.label || 'TBD'}</div>
+      <Trophy className="w-10 h-10 mx-auto mb-3 text-yellow-600" />
+      <div className="text-xs font-bold text-muted-foreground mb-3 uppercase tracking-wider">CHAMPION</div>
+      <div className="font-bold text-xl text-primary">{data.label || 'TBD'}</div>
     </div>
   </div>
 );
 
 const nodeTypes = {
-  team: TeamNode,
   match: MatchNode,
+  emptyMatch: EmptyMatchNode,
   final: FinalNode,
   champion: ChampionNode,
 };
@@ -144,7 +251,7 @@ const PoolBracket = () => {
 
   // Regenerate visualization when matches or teams change
   useEffect(() => {
-    if (selectedTournamentId && teams.length > 0 && matches.length > 0) {
+    if (selectedTournamentId && teams.length > 0) {
       calculatePoolStandings();
       generateVisualization();
     }
@@ -204,13 +311,10 @@ const PoolBracket = () => {
     const standings: Record<string, PoolStanding[]> = {};
     const teamMap = new Map(teams.map(t => [t._id, t.teamName]));
 
-    // Group matches by pool (if pool info exists in match, otherwise infer from tournament format)
     const selectedTournament = tournaments.find(t => t._id === selectedTournamentId);
     const format = selectedTournament?.format || 'round-robin';
     
     if (format === 'pool-play-bracket' || format === 'pools') {
-      // For pool play, we need to group teams into pools
-      // Since we don't have pool info stored, we'll split teams evenly
       const numPools = Math.ceil(Math.sqrt(teams.length));
       const teamsPerPool = Math.ceil(teams.length / numPools);
 
@@ -228,7 +332,6 @@ const PoolBracket = () => {
           pool: pool + 1
         }));
 
-        // Calculate wins/losses from matches
         matches.forEach(match => {
           if (match.status === 'completed' && match.score) {
             const teamAInPool = poolTeams.some(t => t._id === match.teamA._id);
@@ -255,14 +358,12 @@ const PoolBracket = () => {
           }
         });
 
-        // Sort by wins, then point differential
         standings[poolId].sort((a, b) => {
           if (b.wins !== a.wins) return b.wins - a.wins;
           return (b.pointsFor - b.pointsAgainst) - (a.pointsFor - a.pointsAgainst);
         });
       }
     } else {
-      // For non-pool formats, create a single standings list
       const allStandings: PoolStanding[] = teams.map(team => ({
         teamId: team._id,
         teamName: team.teamName,
@@ -304,7 +405,7 @@ const PoolBracket = () => {
     setPoolStandings(standings);
   }, [teams, matches, selectedTournamentId, tournaments]);
 
-  // Generate ReactFlow visualization
+  // Generate ReactFlow visualization with proper bracket structure
   const generateVisualization = useCallback(() => {
     const selectedTournament = tournaments.find(t => t._id === selectedTournamentId);
     if (!selectedTournament) return;
@@ -323,112 +424,534 @@ const PoolBracket = () => {
 
     setNodes(visualizationNodes);
     setEdges(visualizationEdges);
-  }, [selectedTournamentId, teams, matches, tournaments, poolStandings]);
+  }, [selectedTournamentId, teams, matches, tournaments]);
 
+  // Generate proper single elimination bracket with rounds
   const generateSingleEliminationBracket = (nodes: Node[], edges: Edge[]) => {
+    // Group matches by round
+    const matchesByRound = matches.reduce((acc, match) => {
+      const round = match.round || 1;
+      const roundName = match.roundName || `Round ${round}`;
+      const key = `${round}-${roundName}`;
+      
+      if (!acc[key]) {
+        acc[key] = {
+          round: round,
+          roundName: roundName,
+          matches: []
+        };
+      }
+      acc[key].matches.push(match);
+      return acc;
+    }, {} as Record<string, { round: number; roundName: string; matches: Match[] }>);
+
+    // Sort rounds by round number
+    const sortedRounds = Object.values(matchesByRound).sort((a, b) => a.round - b.round);
+
+    if (sortedRounds.length === 0) return;
+
+    // Calculate bracket dimensions
+    const maxMatchesPerRound = Math.max(...sortedRounds.map(r => r.matches.length));
+    const horizontalSpacing = 350;
+    const verticalSpacing = 120;
+    const startX = 100;
+    let currentX = startX;
+
+    // Get team map for winner lookups
     const teamMap = new Map(teams.map(t => [t._id, t.teamName]));
 
-    // Sort matches by time
-    const sortedMatches = [...matches].sort((a, b) => 
-      new Date(a.startTime).getTime() - new Date(b.startTime).getTime()
-    );
+    // Generate nodes for each round
+    sortedRounds.forEach((roundData, roundIndex) => {
+      const { round, roundName, matches: roundMatches } = roundData;
+      const isFinals = roundName.toLowerCase().includes('final');
+      
+      // Sort matches by bracket position or match number
+      const sortedMatches = [...roundMatches].sort((a, b) => {
+        if (a.bracketPosition && b.bracketPosition) return a.bracketPosition - b.bracketPosition;
+        if (a.matchNumber && b.matchNumber) return a.matchNumber - b.matchNumber;
+        return 0;
+      });
 
-    // Calculate rounds based on number of teams
-    const numRounds = Math.ceil(Math.log2(teams.length));
-    const rounds: Match[][] = [];
-    let remainingMatches = [...sortedMatches];
+      const numMatches = sortedMatches.length;
+      const totalHeight = Math.max(400, (numMatches - 1) * verticalSpacing);
+      const startY = 100;
 
-    // Group matches into rounds (first round has most matches)
-    for (let round = 0; round < numRounds; round++) {
-      const matchesInThisRound = Math.floor(remainingMatches.length / 2) || remainingMatches.length;
-      rounds.push(remainingMatches.slice(0, matchesInThisRound));
-      remainingMatches = remainingMatches.slice(matchesInThisRound);
-    }
-
-    const horizontalSpacing = 400;
-    const verticalSpacing = 150;
-    let xPos = 50;
-
-    // Generate nodes and edges for each round
-    rounds.forEach((round, roundIndex) => {
-      const isFinal = roundIndex === rounds.length - 1;
-      const numMatches = round.length;
-      const totalHeight = Math.max(200, (numMatches - 1) * verticalSpacing);
-      const startY = (900 - totalHeight) / 2;
-
-      round.forEach((match, matchIndex) => {
+      sortedMatches.forEach((match, matchIndex) => {
         const yPos = startY + matchIndex * verticalSpacing;
 
-        if (isFinal) {
-          // Final match
-          const championNode: Node = {
-            id: `champion-${match._id}`,
-            type: 'champion',
-            position: { x: xPos + horizontalSpacing + 100, y: yPos + 25 },
-            data: { 
-              label: match.winnerTeamId 
-                ? teamMap.get(match.winnerTeamId) || match.teamA.teamName
-                : 'TBD'
-            }
-          };
-          nodes.push(championNode);
-
+        if (isFinals) {
+          // Finals node
           const finalNode: Node = {
-            id: `match-${match._id}`,
+            id: `final-${match._id}`,
             type: 'final',
-            position: { x: xPos, y: yPos },
+            position: { x: currentX, y: yPos },
             data: {
+              round: round,
+              roundName: roundName,
               teamA: match.teamA.teamName,
               teamB: match.teamB.teamName,
               score: match.score,
               teamAWinner: match.winnerTeamId === match.teamA._id,
               teamBWinner: match.winnerTeamId === match.teamB._id,
               startTime: match.startTime,
-              status: match.status
+              status: match.status,
+              matchNumber: match.matchNumber
             }
           };
           nodes.push(finalNode);
 
-          edges.push({
-            id: `edge-final-champion-${match._id}`,
-            source: `match-${match._id}`,
-            target: `champion-${match._id}`,
-            animated: match.status === 'ongoing',
-            style: { stroke: match.status === 'completed' ? 'hsl(var(--primary))' : 'hsl(var(--border))', strokeWidth: 2 }
-          });
+          // Champion node
+          if (match.status === 'completed' && match.winnerTeamId) {
+            const championNode: Node = {
+              id: `champion-${match._id}`,
+              type: 'champion',
+              position: { x: currentX + horizontalSpacing, y: yPos + 20 },
+              data: {
+                label: teamMap.get(match.winnerTeamId) || 'Champion'
+              }
+            };
+            nodes.push(championNode);
+
+            edges.push({
+              id: `edge-final-champion-${match._id}`,
+              source: `final-${match._id}`,
+              target: `champion-${match._id}`,
+              animated: false,
+              style: { 
+                stroke: '#10b981', 
+                strokeWidth: 3,
+                strokeDasharray: '5,5'
+              },
+              markerEnd: {
+                type: MarkerType.ArrowClosed,
+                color: '#10b981',
+                width: 30,
+                height: 30
+              }
+            });
+          }
         } else {
           // Regular match node
           const matchNode: Node = {
             id: `match-${match._id}`,
             type: 'match',
-            position: { x: xPos, y: yPos },
+            position: { x: currentX, y: yPos },
             data: {
-              label: `Round ${roundIndex + 1}`,
+              round: round,
+              roundName: roundName,
               teamA: match.teamA.teamName,
               teamB: match.teamB.teamName,
               score: match.score,
               teamAWinner: match.winnerTeamId === match.teamA._id,
               teamBWinner: match.winnerTeamId === match.teamB._id,
               startTime: match.startTime,
-              status: match.status
+              status: match.status,
+              matchNumber: match.matchNumber
             }
           };
           nodes.push(matchNode);
         }
 
-        // Connect to next round (if exists)
-        if (roundIndex < rounds.length - 1) {
-          const nextRound = rounds[roundIndex + 1];
-          if (nextRound && nextRound.length > 0) {
+        // Connect to next round match (if parent matches exist)
+        if (match.parentMatchAId || match.parentMatchBId) {
+          // This match has parent matches, so we can draw connections
+          // But we need to find the next round match this winner should connect to
+          const nextRound = sortedRounds[roundIndex + 1];
+          if (nextRound) {
+            // Find matches in next round that reference this match as parent
+            const nextRoundMatches = nextRound.matches.filter(m => 
+              m.parentMatchAId === match._id || m.parentMatchBId === match._id
+            );
+
+            nextRoundMatches.forEach(nextMatch => {
+              const isFinals = nextMatch.roundName?.toLowerCase().includes('final');
+              const targetId = isFinals ? `final-${nextMatch._id}` : `match-${nextMatch._id}`;
+              const sourceId = match.roundName?.toLowerCase().includes('final') 
+                ? `final-${match._id}` 
+                : `match-${match._id}`;
+
+              // Only draw edge if match is completed and has a winner
+              if (match.status === 'completed' && match.winnerTeamId) {
+                edges.push({
+                  id: `edge-${match._id}-${nextMatch._id}`,
+                  source: sourceId,
+                  target: targetId,
+                  animated: false,
+                  style: { 
+                    stroke: '#10b981', 
+                    strokeWidth: 2,
+                    strokeDasharray: match.status === 'completed' ? '0' : '5,5'
+                  },
+                  markerEnd: {
+                    type: MarkerType.ArrowClosed,
+                    color: '#10b981',
+                    width: 25,
+                    height: 25
+                  }
+                });
+              } else {
+                // Draw dotted line for incomplete matches
+                edges.push({
+                  id: `edge-${match._id}-${nextMatch._id}-pending`,
+                  source: sourceId,
+                  target: targetId,
+                  animated: false,
+                  style: { 
+                    stroke: '#6b7280', 
+                    strokeWidth: 1,
+                    strokeDasharray: '10,5',
+                    opacity: 0.5
+                  },
+                  markerEnd: {
+                    type: MarkerType.ArrowClosed,
+                    color: '#6b7280',
+                    width: 20,
+                    height: 20
+                  }
+                });
+              }
+            });
+          }
+        } else if (roundIndex < sortedRounds.length - 1) {
+          // No parent info, but we can infer next round connections
+          // Calculate which match in next round this should connect to
+          const nextRound = sortedRounds[roundIndex + 1];
+          if (nextRound && nextRound.matches.length > 0) {
             const nextMatchIndex = Math.floor(matchIndex / 2);
-            if (nextMatchIndex < nextRound.length) {
-              const nextMatch = nextRound[nextMatchIndex];
+            if (nextMatchIndex < nextRound.matches.length) {
+              const nextMatch = nextRound.matches[nextMatchIndex];
+              const isFinals = nextMatch.roundName?.toLowerCase().includes('final');
+              const targetId = isFinals ? `final-${nextMatch._id}` : `match-${nextMatch._id}`;
+              const sourceId = `match-${match._id}`;
+
+              if (match.status === 'completed' && match.winnerTeamId) {
+                edges.push({
+                  id: `edge-${match._id}-${nextMatch._id}`,
+                  source: sourceId,
+                  target: targetId,
+                  animated: false,
+                  style: { 
+                    stroke: '#10b981', 
+                    strokeWidth: 2
+                  },
+                  markerEnd: {
+                    type: MarkerType.ArrowClosed,
+                    color: '#10b981',
+                    width: 25,
+                    height: 25
+                  }
+                });
+              } else {
+                edges.push({
+                  id: `edge-${match._id}-${nextMatch._id}-pending`,
+                  source: sourceId,
+                  target: targetId,
+                  animated: false,
+                  style: { 
+                    stroke: '#6b7280', 
+                    strokeWidth: 1,
+                    strokeDasharray: '10,5',
+                    opacity: 0.5
+                  },
+                  markerEnd: {
+                    type: MarkerType.ArrowClosed,
+                    color: '#6b7280',
+                    width: 20,
+                    height: 20
+                  }
+                });
+              }
+            }
+          }
+        }
+      });
+
+      currentX += horizontalSpacing;
+    });
+
+    // Generate empty match nodes for upcoming rounds
+    if (sortedRounds.length > 0) {
+      const lastRound = sortedRounds[sortedRounds.length - 1];
+      const nextRoundNumber = lastRound.round + 1;
+      const totalRounds = Math.ceil(Math.log2(teams.length));
+      
+      // If we haven't reached finals yet, show upcoming rounds
+      if (nextRoundNumber <= totalRounds && lastRound.round < totalRounds) {
+        const nextRoundMatchesCount = Math.ceil(lastRound.matches.length / 2);
+        
+        if (nextRoundMatchesCount > 0) {
+          const roundNames: Record<number, string> = {
+            [totalRounds]: "Finals",
+            [totalRounds - 1]: "Semifinals",
+            [totalRounds - 2]: "Quarterfinals",
+            [totalRounds - 3]: "Round of 16",
+            [totalRounds - 4]: "Round of 32",
+          };
+          
+          const nextRoundName = roundNames[nextRoundNumber] || `Round ${nextRoundNumber}`;
+          const horizontalSpacing = 350;
+          const verticalSpacing = 120;
+          const startY = 100;
+          let currentX = 100 + (sortedRounds.length * horizontalSpacing);
+
+          for (let i = 0; i < nextRoundMatchesCount; i++) {
+            const yPos = startY + i * verticalSpacing;
+            const isFinals = nextRoundName.toLowerCase().includes('final');
+            
+            const emptyNode: Node = {
+              id: `empty-${nextRoundNumber}-${i}`,
+              type: isFinals ? 'final' : 'emptyMatch',
+              position: { x: currentX, y: yPos },
+              data: {
+                round: nextRoundNumber,
+                roundName: nextRoundName
+              }
+            };
+            nodes.push(emptyNode);
+
+            // Connect from last round matches to empty nodes
+            if (lastRound.matches.length > 0) {
+              const sourceMatchIndex = i * 2;
+              const sourceMatch = lastRound.matches[sourceMatchIndex];
+              if (sourceMatch) {
+                const sourceId = lastRound.roundName?.toLowerCase().includes('final')
+                  ? `final-${sourceMatch._id}`
+                  : `match-${sourceMatch._id}`;
+                
+                edges.push({
+                  id: `edge-${sourceMatch._id}-empty-${nextRoundNumber}-${i}`,
+                  source: sourceId,
+                  target: `empty-${nextRoundNumber}-${i}`,
+                  animated: false,
+                  style: { 
+                    stroke: '#9ca3af', 
+                    strokeWidth: 1,
+                    strokeDasharray: '5,5',
+                    opacity: 0.4
+                  },
+                  markerEnd: {
+                    type: MarkerType.ArrowClosed,
+                    color: '#9ca3af',
+                    width: 20,
+                    height: 20
+                  }
+                });
+              }
+            }
+          }
+
+          // If it's not finals, recursively generate more empty rounds
+          if (nextRoundNumber < totalRounds) {
+            generateEmptyRoundsRecursive(nodes, edges, nextRoundNumber + 1, totalRounds, currentX + horizontalSpacing, sortedRounds.length + 1);
+          }
+        }
+      }
+    }
+  };
+
+  // Recursively generate empty rounds
+  const generateEmptyRoundsRecursive = (
+    nodes: Node[], 
+    edges: Edge[], 
+    roundNumber: number, 
+    totalRounds: number,
+    xPos: number,
+    currentRoundIndex: number
+  ) => {
+    if (roundNumber > totalRounds) return;
+
+    const roundNames: Record<number, string> = {
+      [totalRounds]: "Finals",
+      [totalRounds - 1]: "Semifinals",
+      [totalRounds - 2]: "Quarterfinals",
+      [totalRounds - 3]: "Round of 16",
+      [totalRounds - 4]: "Round of 32",
+    };
+
+    const roundName = roundNames[roundNumber] || `Round ${roundNumber}`;
+    const horizontalSpacing = 350;
+    const verticalSpacing = 120;
+    const startY = 100;
+    const matchesInThisRound = Math.pow(2, totalRounds - roundNumber);
+    const isFinals = roundName.toLowerCase().includes('final');
+
+    for (let i = 0; i < matchesInThisRound; i++) {
+      const yPos = startY + i * verticalSpacing;
+      
+      const emptyNode: Node = {
+        id: `empty-${roundNumber}-${i}`,
+        type: isFinals ? 'final' : 'emptyMatch',
+        position: { x: xPos, y: yPos },
+        data: {
+          round: roundNumber,
+          roundName: roundName
+        }
+      };
+      nodes.push(emptyNode);
+
+      // Connect from previous empty round
+      if (roundNumber > 1) {
+        const prevRoundNumber = roundNumber - 1;
+        const sourceIndex = Math.floor(i / 2);
+        const sourceId = `empty-${prevRoundNumber}-${sourceIndex}`;
+        
+        edges.push({
+          id: `edge-empty-${prevRoundNumber}-${sourceIndex}-empty-${roundNumber}-${i}`,
+          source: sourceId,
+          target: `empty-${roundNumber}-${i}`,
+          animated: false,
+          style: { 
+            stroke: '#9ca3af', 
+            strokeWidth: 1,
+            strokeDasharray: '5,5',
+            opacity: 0.4
+          },
+          markerEnd: {
+            type: MarkerType.ArrowClosed,
+            color: '#9ca3af',
+            width: 20,
+            height: 20
+          }
+        });
+      }
+    }
+
+    // If not finals, continue to next round
+    if (roundNumber < totalRounds) {
+      generateEmptyRoundsRecursive(nodes, edges, roundNumber + 1, totalRounds, xPos + horizontalSpacing, currentRoundIndex + 1);
+    } else {
+      // Add champion node for finals
+      const championNode: Node = {
+        id: `empty-champion`,
+        type: 'champion',
+        position: { x: xPos + horizontalSpacing, y: startY + 20 },
+        data: {
+          label: 'TBD'
+        }
+      };
+      nodes.push(championNode);
+
+      edges.push({
+        id: `edge-empty-final-champion`,
+        source: `empty-${roundNumber}-0`,
+        target: `empty-champion`,
+        animated: false,
+        style: { 
+          stroke: '#9ca3af', 
+          strokeWidth: 1,
+          strokeDasharray: '5,5',
+          opacity: 0.4
+        },
+        markerEnd: {
+          type: MarkerType.ArrowClosed,
+          color: '#9ca3af',
+          width: 20,
+          height: 20
+        }
+      });
+    }
+  };
+
+  const generatePoolPlayBracket = (nodes: Node[], edges: Edge[]) => {
+    // For pool play, show pools first, then bracket rounds
+    const poolKeys = Object.keys(poolStandings).sort();
+    const horizontalSpacing = 300;
+    let xPos = 50;
+    const verticalSpacing = 80;
+    const startY = 100;
+
+    // Show pool standings
+    poolKeys.forEach((poolKey, poolIndex) => {
+      const standings = poolStandings[poolKey];
+      
+      standings.forEach((standing, index) => {
+        // For now, skip team nodes for pool play - focus on bracket matches
+      });
+      
+      xPos += horizontalSpacing;
+    });
+
+    // Now show bracket matches grouped by rounds
+    const matchesByRound = matches.reduce((acc, match) => {
+      const round = match.round || 1;
+      const roundName = match.roundName || `Round ${round}`;
+      const key = `${round}-${roundName}`;
+      
+      if (!acc[key]) {
+        acc[key] = {
+          round: round,
+          roundName: roundName,
+          matches: []
+        };
+      }
+      acc[key].matches.push(match);
+      return acc;
+    }, {} as Record<string, { round: number; roundName: string; matches: Match[] }>);
+
+    const sortedRounds = Object.values(matchesByRound).sort((a, b) => a.round - b.round);
+
+    sortedRounds.forEach((roundData, roundIndex) => {
+      const { round, roundName, matches: roundMatches } = roundData;
+      const isFinals = roundName.toLowerCase().includes('final');
+      
+      const sortedMatches = [...roundMatches].sort((a, b) => {
+        if (a.bracketPosition && b.bracketPosition) return a.bracketPosition - b.bracketPosition;
+        if (a.matchNumber && b.matchNumber) return a.matchNumber - b.matchNumber;
+        return 0;
+      });
+
+      const numMatches = sortedMatches.length;
+      const verticalSpacing = 120;
+      const startY = 100;
+
+      sortedMatches.forEach((match, matchIndex) => {
+        const yPos = startY + matchIndex * verticalSpacing;
+
+        const matchNode: Node = {
+          id: `match-${match._id}`,
+          type: isFinals ? 'final' : 'match',
+          position: { x: xPos, y: yPos },
+          data: {
+            round: round,
+            roundName: roundName,
+            teamA: match.teamA.teamName,
+            teamB: match.teamB.teamName,
+            score: match.score,
+            teamAWinner: match.winnerTeamId === match.teamA._id,
+            teamBWinner: match.winnerTeamId === match.teamB._id,
+            startTime: match.startTime,
+            status: match.status,
+            matchNumber: match.matchNumber
+          }
+        };
+        nodes.push(matchNode);
+
+        // Connect to next round
+        if (roundIndex < sortedRounds.length - 1) {
+          const nextRound = sortedRounds[roundIndex + 1];
+          const nextMatchIndex = Math.floor(matchIndex / 2);
+          if (nextMatchIndex < nextRound.matches.length) {
+            const nextMatch = nextRound.matches[nextMatchIndex];
+            const isNextFinals = nextMatch.roundName?.toLowerCase().includes('final');
+            const targetId = isNextFinals ? `final-${nextMatch._id}` : `match-${nextMatch._id}`;
+
+            if (match.status === 'completed' && match.winnerTeamId) {
               edges.push({
                 id: `edge-${match._id}-${nextMatch._id}`,
                 source: `match-${match._id}`,
-                target: `match-${nextMatch._id}`,
-                animated: match.status === 'ongoing',
-                style: { stroke: match.status === 'completed' ? 'hsl(var(--primary))' : 'hsl(var(--border))' }
+                target: targetId,
+                animated: false,
+                style: { stroke: '#10b981', strokeWidth: 2 },
+                markerEnd: { type: MarkerType.ArrowClosed, color: '#10b981' }
+              });
+            } else {
+              edges.push({
+                id: `edge-${match._id}-${nextMatch._id}-pending`,
+                source: `match-${match._id}`,
+                target: targetId,
+                animated: false,
+                style: { stroke: '#6b7280', strokeWidth: 1, strokeDasharray: '10,5', opacity: 0.5 },
+                markerEnd: { type: MarkerType.ArrowClosed, color: '#6b7280' }
               });
             }
           }
@@ -439,145 +962,57 @@ const PoolBracket = () => {
     });
   };
 
-  const generatePoolPlayBracket = (nodes: Node[], edges: Edge[]) => {
-    const poolKeys = Object.keys(poolStandings).sort();
+  const generateRoundRobinView = (nodes: Node[], edges: Edge[]) => {
+    // Group by rounds
+    const matchesByRound = matches.reduce((acc, match) => {
+      const round = match.round || 1;
+      const roundName = match.roundName || `Round ${round}`;
+      const key = `${round}-${roundName}`;
+      
+      if (!acc[key]) {
+        acc[key] = {
+          round: round,
+          roundName: roundName,
+          matches: []
+        };
+      }
+      acc[key].matches.push(match);
+      return acc;
+    }, {} as Record<string, { round: number; roundName: string; matches: Match[] }>);
+
+    const sortedRounds = Object.values(matchesByRound).sort((a, b) => a.round - b.round);
     const horizontalSpacing = 300;
     let xPos = 50;
     const verticalSpacing = 100;
-    const startY = 100;
 
-    // First, show all pool standings
-    poolKeys.forEach((poolKey, poolIndex) => {
-      const standings = poolStandings[poolKey];
-
-      standings.forEach((standing, index) => {
-        const teamNode: Node = {
-          id: `team-${standing.teamId}-${poolIndex}`,
-          type: 'team',
-          position: { x: xPos, y: startY + index * verticalSpacing },
+    sortedRounds.forEach((roundData) => {
+      const { roundName, matches: roundMatches } = roundData;
+      
+      roundMatches.forEach((match, index) => {
+        const matchNode: Node = {
+          id: `match-${match._id}`,
+          type: 'match',
+          position: { 
+            x: xPos + (index % 4) * horizontalSpacing, 
+            y: 100 + Math.floor(index / 4) * verticalSpacing 
+          },
           data: {
-            label: standing.teamName,
-            pool: poolKey,
-            record: { wins: standing.wins, losses: standing.losses }
+            round: roundData.round,
+            roundName: roundName,
+            teamA: match.teamA.teamName,
+            teamB: match.teamB.teamName,
+            score: match.score,
+            teamAWinner: match.winnerTeamId === match.teamA._id,
+            teamBWinner: match.winnerTeamId === match.teamB._id,
+            status: match.status,
+            startTime: match.startTime,
+            matchNumber: match.matchNumber
           }
         };
-        nodes.push(teamNode);
+        nodes.push(matchNode);
       });
 
-      xPos += horizontalSpacing;
-    });
-
-    // Then show bracket matches (playoff rounds)
-    // Find matches that involve top teams from pools (likely bracket matches)
-    const bracketMatches = matches.filter(m => 
-      matches.some(otherMatch => 
-        otherMatch._id !== m._id && 
-        (otherMatch.teamA._id === m.teamA._id || 
-         otherMatch.teamB._id === m.teamB._id ||
-         otherMatch.teamA._id === m.teamB._id ||
-         otherMatch.teamB._id === m.teamA._id)
-      )
-    );
-
-    bracketMatches.forEach((match, matchIndex) => {
-      const matchNode: Node = {
-        id: `bracket-match-${match._id}`,
-        type: 'match',
-        position: { x: xPos, y: startY + matchIndex * 150 },
-        data: {
-          teamA: match.teamA.teamName,
-          teamB: match.teamB.teamName,
-          score: match.score,
-          status: match.status,
-          startTime: match.startTime
-        }
-      };
-      nodes.push(matchNode);
-
-      // Connect from pool teams to bracket matches if it's a top team
-      poolKeys.forEach((poolKey, poolIndex) => {
-        const standings = poolStandings[poolKey];
-        const topTwo = standings.slice(0, 2);
-        
-        topTwo.forEach((standing, index) => {
-          if (match.teamA._id === standing.teamId || match.teamB._id === standing.teamId) {
-            edges.push({
-              id: `edge-pool-${poolIndex}-${index}-match-${match._id}`,
-              source: `team-${standing.teamId}-${poolIndex}`,
-              target: `bracket-match-${match._id}`,
-              animated: match.status === 'ongoing',
-              style: { stroke: 'hsl(var(--border))' }
-            });
-          }
-        });
-      });
-    });
-
-    // If there's a final match
-    const finalMatch = matches.find(m => matches.every(other => 
-      other._id === m._id || 
-      (other.teamA._id !== m.teamA._id && other.teamB._id !== m.teamB._id &&
-       other.teamA._id !== m.teamB._id && other.teamB._id !== m.teamA._id)
-    ));
-
-    if (finalMatch && bracketMatches.length > 0) {
-      const finalNode: Node = {
-        id: `final-${finalMatch._id}`,
-        type: 'final',
-        position: { x: xPos + horizontalSpacing, y: startY + bracketMatches.length * 75 },
-        data: {
-          teamA: finalMatch.teamA.teamName,
-          teamB: finalMatch.teamB.teamName,
-          score: finalMatch.score,
-          teamAWinner: finalMatch.winnerTeamId === finalMatch.teamA._id,
-          teamBWinner: finalMatch.winnerTeamId === finalMatch.teamB._id,
-          startTime: finalMatch.startTime,
-          status: finalMatch.status
-        }
-      };
-      nodes.push(finalNode);
-
-      const championNode: Node = {
-        id: `champion-${finalMatch._id}`,
-        type: 'champion',
-        position: { x: xPos + horizontalSpacing * 2, y: startY + bracketMatches.length * 75 + 25 },
-        data: {
-          label: finalMatch.winnerTeamId ? 
-            teams.find(t => t._id === finalMatch.winnerTeamId)?.teamName || 'TBD' : 'TBD'
-        }
-      };
-      nodes.push(championNode);
-
-      edges.push({
-        id: `edge-final-champion-${finalMatch._id}`,
-        source: `final-${finalMatch._id}`,
-        target: `champion-${finalMatch._id}`,
-        animated: finalMatch.status === 'ongoing',
-        style: { stroke: finalMatch.status === 'completed' ? 'hsl(var(--primary))' : 'hsl(var(--border))', strokeWidth: 2 }
-      });
-    }
-  };
-
-  const generateRoundRobinView = (nodes: Node[], edges: Edge[]) => {
-    const horizontalSpacing = 250;
-    let xPos = 50;
-    const verticalSpacing = 80;
-    const startY = 100;
-
-    matches.forEach((match, index) => {
-      const matchNode: Node = {
-        id: `match-${match._id}`,
-        type: 'match',
-        position: { x: xPos + (index % 3) * horizontalSpacing, y: startY + Math.floor(index / 3) * verticalSpacing },
-        data: {
-          teamA: match.teamA.teamName,
-          teamB: match.teamB.teamName,
-          score: match.score,
-          status: match.status,
-          startTime: match.startTime
-        }
-      };
-      nodes.push(matchNode);
+      xPos += horizontalSpacing * 4;
     });
   };
 
@@ -588,7 +1023,7 @@ const PoolBracket = () => {
       <Navbar />
       <main className="container mx-auto px-4 pt-24 pb-32">
         <div className="mb-8">
-          <h1 className="text-4xl font-bold mb-4">Pool & Bracket</h1>
+          <h1 className="text-4xl font-bold mb-4">Tournament Bracket</h1>
           <div className="flex gap-4 items-center">
             <Select value={selectedTournamentId} onValueChange={setSelectedTournamentId}>
               <SelectTrigger className="w-[300px]">
@@ -604,7 +1039,7 @@ const PoolBracket = () => {
             </Select>
             <button
               onClick={fetchMatches}
-              className="flex items-center gap-2 px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors"
+              className="flex items-center gap-2 px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 transition-colors"
             >
               <RefreshCw className="h-4 w-4" />
               Refresh
@@ -614,9 +1049,9 @@ const PoolBracket = () => {
 
         {selectedTournament && (
           <>
-            {/* Pool Standings */}
-            {Object.keys(poolStandings).length > 0 && (
-              <div className="grid gap-6 lg:grid-cols-2 mb-12">
+            {/* Pool Standings (if pool play) */}
+            {selectedTournament.format === 'pool-play-bracket' && Object.keys(poolStandings).length > 0 && (
+              <div className="grid gap-6 lg:grid-cols-2 mb-8">
                 {Object.entries(poolStandings).map(([poolKey, standings]) => (
                   <Card key={poolKey} className="glass-card glass-hover">
                     <CardHeader>
@@ -659,20 +1094,22 @@ const PoolBracket = () => {
                 <CardHeader>
                   <CardTitle className="flex items-center gap-2">
                     <Award className="h-5 w-5" />
-                    Tournament Bracket
+                    {selectedTournament.format === 'single-elimination' ? 'Elimination Bracket' : 
+                     selectedTournament.format === 'pool-play-bracket' ? 'Playoff Bracket' : 
+                     'Tournament Matches'}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="h-[900px] rounded-lg border border-border/50 bg-background/30">
+                  <div className="h-[800px] rounded-lg border border-border/50 bg-background/30 overflow-hidden">
                     <ReactFlow
                       nodes={nodes}
                       edges={edges}
                       nodeTypes={nodeTypes}
                       fitView
                       fitViewOptions={{ padding: 0.2 }}
-                      minZoom={0.3}
+                      minZoom={0.2}
                       maxZoom={2}
-                      defaultViewport={{ x: 0, y: 0, zoom: 0.8 }}
+                      defaultViewport={{ x: 0, y: 0, zoom: 0.7 }}
                       nodesDraggable={false}
                       nodesConnectable={false}
                       elementsSelectable={false}
@@ -716,7 +1153,7 @@ const PoolBracket = () => {
 
         {!selectedTournamentId && (
           <Card className="glass-card p-8 text-center">
-            <p className="text-muted-foreground">Please select a tournament to view pools and brackets.</p>
+            <p className="text-muted-foreground">Please select a tournament to view the bracket.</p>
           </Card>
         )}
       </main>

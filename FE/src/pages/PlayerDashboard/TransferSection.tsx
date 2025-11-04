@@ -25,7 +25,7 @@ const TransferSection = ({ playerId, player, onRefresh }: TransferSectionProps) 
   const fetchTransferHistory = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:5000/api/player/${playerId}/transfer-history`);
+      const response = await fetch(`http://localhost:9000/api/player/${playerId}/transfer-history`);
       if (response.ok) {
         const data = await response.json();
         setTransferHistory(data);

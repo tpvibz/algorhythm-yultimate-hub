@@ -1,6 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, Heart, Users, Trophy, Camera, Star, Trophy as TrophyIcon, TrendingUp, Image as ImageIcon } from "lucide-react";
+import { Calendar, Heart, Users, Trophy, Camera, Star, Trophy as TrophyIcon, TrendingUp, Image as ImageIcon, UserCheck } from "lucide-react";
+import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
 import BottomNav from "@/components/BottomNav";
 import VolunteerNavbar from "@/components/VolunteerNavbar";
@@ -8,15 +9,46 @@ import VolunteerNotifications from "@/components/VolunteerNotifications";
 import AssignedTournamentsTab from "./VolunteerDashboard/AssignedTournamentsTab";
 import LiveScoringTab from "./VolunteerDashboard/LiveScoringTab";
 import MatchImagesTab from "./VolunteerDashboard/MatchImagesTab";
+import MatchAttendanceTab from "./VolunteerDashboard/MatchAttendanceTab";
+import { analyticsAPI, VolunteerOverviewResponse } from "@/services/api";
 
 const VolunteerDashboard = () => {
-  const [activeTab, setActiveTab] = useState<"overview" | "assigned-tournaments" | "live-scoring" | "match-images">("overview");
+  const [activeTab, setActiveTab] = useState<"overview" | "assigned-tournaments" | "attendance" | "live-scoring" | "match-images">("overview");
+  const [overviewData, setOverviewData] = useState<VolunteerOverviewResponse | null>(null);
+  const [loading, setLoading] = useState(true);
 
-  const stats = [
-    { icon: Calendar, label: "Upcoming Events", value: "5", change: "This month" },
-    { icon: Heart, label: "Hours Contributed", value: "24", change: "+6 this week" },
-    { icon: Users, label: "Students Impacted", value: "86", change: "Across programs" },
-    { icon: Trophy, label: "Events Supported", value: "12", change: "This year" }
+  useEffect(() => {
+    fetchVolunteerOverview();
+  }, []);
+
+  const fetchVolunteerOverview = async () => {
+    try {
+      setLoading(true);
+      const response = await analyticsAPI.getVolunteerOverview();
+      if (response.success) {
+        setOverviewData(response);
+      } else {
+        toast.error("Failed to load volunteer overview");
+      }
+    } catch (error) {
+      toast.error("Server error while loading volunteer overview");
+      console.error("Error fetching volunteer overview:", error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Use real data from backend or fallback to defaults
+  const stats = overviewData ? [
+    { icon: Calendar, label: "Upcoming Events", value: overviewData.data.stats.upcomingEvents.value, change: overviewData.data.stats.upcomingEvents.change },
+    { icon: Heart, label: "Hours Contributed", value: overviewData.data.stats.hoursContributed.value, change: overviewData.data.stats.hoursContributed.change },
+    { icon: Users, label: "Students Impacted", value: overviewData.data.stats.studentsImpacted.value, change: overviewData.data.stats.studentsImpacted.change },
+    { icon: Trophy, label: "Events Supported", value: overviewData.data.stats.eventsSupported.value, change: overviewData.data.stats.eventsSupported.change }
+  ] : [
+    { icon: Calendar, label: "Upcoming Events", value: "0", change: "No upcoming" },
+    { icon: Heart, label: "Hours Contributed", value: "0", change: "0 this week" },
+    { icon: Users, label: "Students Impacted", value: "0", change: "No students yet" },
+    { icon: Trophy, label: "Events Supported", value: "0", change: "No events" }
   ];
 
   return (
@@ -43,8 +75,26 @@ const VolunteerDashboard = () => {
           </div>
 
           {/* Stats Grid */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
-            {stats.map((stat, index) => (
+          {loading ? (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              {[1, 2, 3, 4].map((i) => (
+                <Card key={i} className="glass-card animate-pulse">
+                  <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                    <CardTitle className="text-sm font-medium text-muted-foreground h-4 w-24 bg-gray-200 rounded"></CardTitle>
+                    <div className="p-2 bg-gray-200 rounded-lg w-8 h-8"></div>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex flex-col">
+                      <div className="text-3xl font-bold h-8 w-16 bg-gray-200 rounded mb-2"></div>
+                      <div className="text-sm h-4 w-20 bg-gray-200 rounded"></div>
+                    </div>
+                  </CardContent>
+                </Card>
+              ))}
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+              {stats.map((stat, index) => (
               <Card 
                 key={index} 
                 className="glass-card glass-hover hover:-translate-y-1 animate-slide-up"
@@ -66,7 +116,8 @@ const VolunteerDashboard = () => {
                 </CardContent>
               </Card>
             ))}
-          </div>
+            </div>
+          )}
 
           {/* Tabs */}
           <div className="mb-6 flex gap-3 border-b border-border">
@@ -90,6 +141,17 @@ const VolunteerDashboard = () => {
             >
               <TrophyIcon className="h-4 w-4 inline mr-2" />
               Assigned Tournaments
+            </button>
+            <button
+              onClick={() => setActiveTab("attendance")}
+              className={`px-4 py-2 font-medium transition-colors ${
+                activeTab === "attendance"
+                  ? "border-b-2 border-primary text-primary"
+                  : "text-muted-foreground hover:text-foreground"
+              }`}
+            >
+              <UserCheck className="h-4 w-4 inline mr-2" />
+              Attendance
             </button>
             <button
               onClick={() => setActiveTab("live-scoring")}
@@ -117,6 +179,7 @@ const VolunteerDashboard = () => {
 
           {/* Tab Content */}
           {activeTab === "assigned-tournaments" && <AssignedTournamentsTab />}
+          {activeTab === "attendance" && <MatchAttendanceTab />}
           {activeTab === "live-scoring" && <LiveScoringTab />}
           {activeTab === "match-images" && <MatchImagesTab />}
 

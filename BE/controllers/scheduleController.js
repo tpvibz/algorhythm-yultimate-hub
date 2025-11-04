@@ -1,6 +1,8 @@
 import Team from "../models/teamModel.js";
 import Tournament from "../models/tournamentModel.js";
 import Match from "../models/matchModel.js";
+import TeamRoster from "../models/teamRosterModel.js";
+import { createNotificationsForUsers } from "./notificationController.js";
 
 // Get teams registered for a tournament
 export const getTeamsByTournament = async (req, res) => {
@@ -69,6 +71,7 @@ const generateRoundRobin = (teams) => {
   const isOdd = n % 2 !== 0;
   const teamsToSchedule = isOdd ? [...teams, null] : teams;
   const numRounds = teamsToSchedule.length - 1;
+  let matchNumber = 1;
 
   for (let round = 0; round < numRounds; round++) {
     for (let i = 0; i < teamsToSchedule.length / 2; i++) {
@@ -79,7 +82,9 @@ const generateRoundRobin = (teams) => {
         matches.push({
           teamAId: teamA._id,
           teamBId: teamB._id,
-          round: round + 1
+          round: round + 1,
+          roundName: `Round ${round + 1}`,
+          matchNumber: matchNumber++
         });
       }
     }
@@ -97,6 +102,7 @@ const generatePoolMatches = (teams, poolsPerGroup = 2) => {
   const matches = [];
   const teamCount = teams.length;
   const teamsPerPool = Math.ceil(teamCount / poolsPerGroup);
+  let matchNumber = 1;
   
   for (let pool = 0; pool < poolsPerGroup; pool++) {
     const poolTeams = teams.slice(pool * teamsPerPool, (pool + 1) * teamsPerPool);
@@ -108,7 +114,9 @@ const generatePoolMatches = (teams, poolsPerGroup = 2) => {
           teamAId: poolTeams[i]._id,
           teamBId: poolTeams[j]._id,
           pool: pool + 1,
-          round: 1
+          round: 1,
+          roundName: "Pool Play",
+          matchNumber: matchNumber++
         });
       }
     }
@@ -117,38 +125,49 @@ const generatePoolMatches = (teams, poolsPerGroup = 2) => {
   return matches;
 };
 
+// Helper function to get round name based on round number and total rounds
+const getRoundName = (roundNumber, totalRounds) => {
+  const roundNames = {
+    [totalRounds]: "Finals",
+    [totalRounds - 1]: "Semifinals",
+    [totalRounds - 2]: "Quarterfinals",
+    [totalRounds - 3]: "Round of 16",
+    [totalRounds - 4]: "Round of 32",
+  };
+  
+  return roundNames[roundNumber] || `Round ${roundNumber}`;
+};
+
 // Helper function to generate Single Elimination bracket matches
+// Only generates the first round - subsequent rounds are generated automatically when previous round completes
 const generateSingleElimination = (teams) => {
   const matches = [];
   const n = teams.length;
   const numRounds = Math.ceil(Math.log2(n));
   
-  // Initialize first round
-  let currentRound = 1;
-  let teamsInRound = [...teams];
+  // Shuffle teams for random seeding
+  const shuffledTeams = [...teams].sort(() => Math.random() - 0.5);
+  
+  // Only generate first round matches - later rounds will be auto-generated
+  const currentRound = 1;
+  const roundName = getRoundName(currentRound, numRounds);
   let matchNumber = 1;
+  let bracketPosition = 1;
 
-  while (teamsInRound.length > 1) {
-    const nextRoundTeams = [];
-    const roundMatches = [];
-
-    for (let i = 0; i < teamsInRound.length; i += 2) {
-      if (i + 1 < teamsInRound.length) {
-        roundMatches.push({
-          teamAId: teamsInRound[i]._id,
-          teamBId: teamsInRound[i + 1]._id,
-          round: currentRound,
-          matchNumber: matchNumber++
-        });
-      } else {
-        // Bye for odd number
-        nextRoundTeams.push(teamsInRound[i]);
-      }
+  for (let i = 0; i < shuffledTeams.length; i += 2) {
+    if (i + 1 < shuffledTeams.length) {
+      matches.push({
+        teamAId: shuffledTeams[i]._id,
+        teamBId: shuffledTeams[i + 1]._id,
+        round: currentRound,
+        roundName: roundName,
+        matchNumber: matchNumber++,
+        bracketPosition: bracketPosition++
+      });
+    } else {
+      // Bye for odd number - team will be handled in next round generation
+      // For now, we skip single team byes in first round
     }
-
-    matches.push(...roundMatches);
-    teamsInRound = nextRoundTeams;
-    currentRound++;
   }
 
   return matches;
@@ -239,6 +258,7 @@ export const generateSchedule = async (req, res) => {
     let matches = [];
 
     // Generate matches based on format
+    let bracketInfo = null;
     switch (format) {
       case 'round-robin':
         matches = generateRoundRobin(teams);
@@ -275,9 +295,61 @@ export const generateSchedule = async (req, res) => {
         startTime: match.startTime,
         endTime: match.endTime,
         status: 'scheduled',
-        fieldName: `Field ${Math.floor(Math.random() * 3) + 1}` // Random field assignment
+        fieldName: `Field ${Math.floor(Math.random() * 3) + 1}`, // Random field assignment
+        round: match.round || 1,
+        roundName: match.roundName || `Round ${match.round || 1}`,
+        bracketPosition: match.bracketPosition,
+        matchNumber: match.matchNumber,
+        pool: match.pool
       }))
     );
+
+    // Notify all players from teams in the tournament about scheduled matches
+    try {
+      const allPlayerIds = new Set();
+      
+      // Get all players from all teams in the tournament
+      for (const team of teams) {
+        // Get players from TeamRoster
+        const rosterPlayers = await TeamRoster.find({ 
+          teamId: team._id,
+          status: 'active'
+        }).select('playerId');
+        
+        rosterPlayers.forEach(roster => {
+          if (roster.playerId) {
+            allPlayerIds.add(roster.playerId.toString());
+          }
+        });
+
+        // Also get players from team.players array (legacy)
+        if (team.players && Array.isArray(team.players)) {
+          team.players.forEach(player => {
+            if (player.playerId) {
+              allPlayerIds.add(player.playerId.toString());
+            }
+          });
+        }
+      }
+
+      // Notify all players
+      if (allPlayerIds.size > 0) {
+        const playerIdsArray = Array.from(allPlayerIds);
+        const matchCount = savedMatches.length;
+        const matchDate = new Date(savedMatches[0]?.startTime || Date.now()).toLocaleDateString();
+        
+        await createNotificationsForUsers(
+          playerIdsArray,
+          "match_scheduled",
+          "Matches Scheduled",
+          `${matchCount} match${matchCount > 1 ? 'es have' : ' has'} been scheduled for ${tournament.name}. First match starts ${matchDate}.`,
+          { relatedEntityId: tournament._id, relatedEntityType: "tournament" }
+        );
+      }
+    } catch (notificationError) {
+      console.error("Error creating notifications for match scheduling:", notificationError);
+      // Don't fail the request if notification fails
+    }
 
     res.status(201).json({
       success: true,
@@ -316,7 +388,7 @@ export const getMatchesByTournament = async (req, res) => {
     const matches = await Match.find({ tournamentId })
       .populate('teamAId', 'teamName')
       .populate('teamBId', 'teamName')
-      .sort({ startTime: 1 });
+      .sort({ round: 1, bracketPosition: 1, startTime: 1 });
 
     res.status(200).json({
       success: true,
@@ -337,7 +409,14 @@ export const getMatchesByTournament = async (req, res) => {
           endTime: match.endTime,
           status: match.status,
           score: match.score,
-          winnerTeamId: match.winnerTeamId
+          winnerTeamId: match.winnerTeamId,
+          round: match.round || 1,
+          roundName: match.roundName || `Round ${match.round || 1}`,
+          bracketPosition: match.bracketPosition,
+          matchNumber: match.matchNumber,
+          pool: match.pool,
+          parentMatchAId: match.parentMatchAId || null,
+          parentMatchBId: match.parentMatchBId || null
         })),
         matchCount: matches.length
       }
@@ -349,6 +428,105 @@ export const getMatchesByTournament = async (req, res) => {
       message: "Server error while fetching matches",
       error: error.message
     });
+  }
+};
+
+// Automatically generate next round matches for elimination tournaments
+const generateNextRoundMatches = async (tournamentId, completedRound) => {
+  try {
+    // Get all completed matches from the current round
+    const completedMatches = await Match.find({
+      tournamentId,
+      round: completedRound,
+      status: 'completed'
+    }).sort({ bracketPosition: 1 });
+
+    if (completedMatches.length === 0) return null;
+
+    // Get tournament format
+    const tournament = await Tournament.findById(tournamentId);
+    if (!tournament || tournament.format !== 'single-elimination') {
+      return null; // Only auto-generate for single elimination
+    }
+
+    // Get next round number
+    const nextRound = completedRound + 1;
+    
+    // Get all matches for next round to see if they already exist
+    const existingNextRound = await Match.find({
+      tournamentId,
+      round: nextRound
+    });
+
+    if (existingNextRound.length > 0) {
+      // Next round already exists, just update team assignments if needed
+      return existingNextRound;
+    }
+
+    // Get all winners from completed matches
+    const winnersWithMatches = completedMatches
+      .filter(m => m.winnerTeamId)
+      .map(m => ({ winner: m.winnerTeamId, match: m }));
+    
+    // Check for any teams that had a bye (single team advancing)
+    // In elimination, if previous round had odd number of teams, one would advance automatically
+    const allMatchesInRound = await Match.find({
+      tournamentId,
+      round: completedRound
+    });
+    
+    // If we had odd number of matches, one team might have advanced via bye
+    // But for now, we'll just use winners from completed matches
+    if (winnersWithMatches.length < 1) return null; // Need at least 1 winner
+    
+    // If only 1 winner, they advance to finals (next round with 1 match)
+    if (winnersWithMatches.length === 1) {
+      // This is a bye situation - but for finals, we need 2 teams
+      // So this shouldn't happen unless tournament structure is off
+      return null;
+    }
+
+    // Generate next round matches - pair winners sequentially
+    const nextRoundMatches = [];
+    const roundName = getRoundName(nextRound, Math.ceil(Math.log2(winnersWithMatches.length * 2)));
+    let bracketPosition = 1;
+    let matchNumber = 1;
+
+    for (let i = 0; i < winnersWithMatches.length; i += 2) {
+      if (i + 1 < winnersWithMatches.length) {
+        const matchA = winnersWithMatches[i].match;
+        const matchB = winnersWithMatches[i + 1].match;
+        const winnerA = winnersWithMatches[i].winner;
+        const winnerB = winnersWithMatches[i + 1].winner;
+        
+        nextRoundMatches.push({
+          tournamentId,
+          teamAId: winnerA,
+          teamBId: winnerB,
+          round: nextRound,
+          roundName: roundName,
+          bracketPosition: bracketPosition++,
+          matchNumber: matchNumber++,
+          parentMatchAId: matchA._id,
+          parentMatchBId: matchB._id,
+          status: 'scheduled',
+          // Schedule time will be set later or can be auto-scheduled
+          startTime: new Date(Date.now() + 24 * 60 * 60 * 1000), // Default to next day
+          endTime: new Date(Date.now() + 24 * 60 * 60 * 1000 + 60 * 60 * 1000), // Default 1 hour duration
+          fieldName: `Field ${Math.floor(Math.random() * 3) + 1}`
+        });
+      }
+    }
+
+    if (nextRoundMatches.length > 0) {
+      const saved = await Match.insertMany(nextRoundMatches);
+      return saved;
+    }
+
+    return null;
+  } catch (error) {
+    console.error("Error generating next round matches:", error);
+    return null;
   }
 };
 
@@ -388,6 +566,9 @@ export const updateMatch = async (req, res) => {
       };
     }
 
+    const wasCompleted = match.status === 'completed';
+    const isCompleting = status === 'completed' && match.status !== 'completed';
+    
     // Auto-determine winner if score is set and match is completed
     if (status === 'completed' && match.score) {
       if (match.score.teamA > match.score.teamB) {
@@ -403,6 +584,25 @@ export const updateMatch = async (req, res) => {
     }
 
     await match.save();
+
+    // If match was just completed and it's an elimination tournament, generate next round
+    if (isCompleting && match.round && match.winnerTeamId) {
+      // Check if all matches in this round are completed
+      const allMatchesInRound = await Match.find({
+        tournamentId: match.tournamentId,
+        round: match.round
+      });
+
+      const allCompleted = allMatchesInRound.every(m => m.status === 'completed');
+      
+      if (allCompleted) {
+        // Generate next round matches automatically
+        const nextRoundMatches = await generateNextRoundMatches(match.tournamentId, match.round);
+        if (nextRoundMatches && nextRoundMatches.length > 0) {
+          console.log(`Auto-generated ${nextRoundMatches.length} matches for round ${match.round + 1}`);
+        }
+      }
+    }
 
     const updatedMatch = await Match.findById(matchId)
       .populate('teamAId', 'teamName')

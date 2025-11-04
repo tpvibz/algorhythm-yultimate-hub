@@ -1,4 +1,5 @@
 import Tournament from "../models/tournamentModel.js";
+import cloudinary from "../config/cloudinary.js";
 import Person from "../models/personModel.js";
 import { validationResult } from "express-validator";
 
@@ -54,11 +55,21 @@ export const createTournament = async (req, res) => {
       createdBy = adminUser._id;
     }
 
-    // Handle image upload (if provided)
+    // Handle image (upload to Cloudinary if provided)
     let imageUrl = null;
     if (req.file) {
-      // In production, upload to cloud storage (AWS S3, Cloudinary, etc.)
-      imageUrl = `/uploads/${req.file.filename}`;
+      const folder = "algorhythm/tournaments";
+      const uploadResult = await new Promise((resolve, reject) => {
+        const stream = cloudinary.uploader.upload_stream(
+          { folder, resource_type: "image" },
+          (error, result) => {
+            if (error) return reject(error);
+            resolve(result);
+          }
+        );
+        stream.end(req.file.buffer);
+      });
+      imageUrl = uploadResult.secure_url || uploadResult.url;
     }
 
     // Validate dates
@@ -101,7 +112,9 @@ export const createTournament = async (req, res) => {
       description: description.trim(),
       rules: rules.trim(),
       registrationDeadline: deadline,
-      image: imageUrl,
+      image: imageUrl || null,
+      imageData: undefined,
+      imageContentType: undefined,
       createdBy
     });
 
@@ -118,7 +131,7 @@ export const createTournament = async (req, res) => {
       description: tournament.description,
       rules: tournament.rules,
       registrationDeadline: tournament.registrationDeadline,
-      image: tournament.image,
+      image: tournament.image || null,
       status: tournament.status,
       registeredTeams: tournament.registeredTeams || [],
       availableSpots: tournament.availableSpots,
@@ -202,7 +215,7 @@ export const getAllTournaments = async (req, res) => {
       description: tournament.description,
       rules: tournament.rules,
       registrationDeadline: tournament.registrationDeadline,
-      image: tournament.image,
+      image: tournament.image || null,
       status: tournament.status,
       registeredTeams: tournament.registeredTeams || [], // Ensure it's always an array
       availableSpots: tournament.availableSpots,
@@ -263,7 +276,7 @@ export const getTournamentById = async (req, res) => {
       description: tournament.description,
       rules: tournament.rules,
       registrationDeadline: tournament.registrationDeadline,
-      image: tournament.image,
+      image: tournament.image || null,
       status: tournament.status,
       registeredTeams: tournament.registeredTeams,
       availableSpots: tournament.availableSpots,
@@ -303,6 +316,14 @@ export const updateTournament = async (req, res) => {
     delete updates.createdAt;
     delete updates.updatedAt;
 
+    // If new image uploaded, replace imageData and contentType
+    if (req.file) {
+      updates.imageData = req.file.buffer;
+      updates.imageContentType = req.file.mimetype;
+      // normalize path-based image field
+      updates.image = null;
+    }
+
     const tournament = await Tournament.findByIdAndUpdate(
       id,
       updates,
@@ -329,7 +350,7 @@ export const updateTournament = async (req, res) => {
       description: tournament.description,
       rules: tournament.rules,
       registrationDeadline: tournament.registrationDeadline,
-      image: tournament.image,
+      image: tournament.imageData ? `/api/tournaments/${tournament._id}/image` : null,
       status: tournament.status,
       registeredTeams: tournament.registeredTeams,
       availableSpots: tournament.availableSpots,
@@ -384,5 +405,22 @@ export const deleteTournament = async (req, res) => {
       message: "Server error while deleting tournament",
       error: error.message
     });
+  }
+};
+
+// Serve tournament image binary from MongoDB
+export const getTournamentImage = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const tournament = await Tournament.findById(id).select('imageData imageContentType');
+    if (!tournament || !tournament.imageData) {
+      return res.status(404).send('Image not found');
+    }
+    res.set('Content-Type', tournament.imageContentType || 'image/jpeg');
+    res.set('Cache-Control', 'public, max-age=31536000, immutable');
+    return res.send(tournament.imageData);
+  } catch (error) {
+    console.error('Get tournament image error:', error);
+    return res.status(500).send('Server error');
   }
 };

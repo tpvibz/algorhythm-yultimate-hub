@@ -4,7 +4,7 @@ import {
   Users, Trophy, Target, TrendingUp, Calendar, CheckCircle, AlertCircle
 } from "lucide-react";
 import { toast } from "sonner";
-import { Tournament } from "@/services/api";
+import { Tournament, analyticsAPI, AdminOverviewResponse } from "@/services/api";
 
 interface OverviewTabProps {
   setActiveTab: (tab: string) => void;
@@ -32,6 +32,8 @@ interface Session {
 const OverviewTab = ({ setActiveTab, tournaments = [] }: OverviewTabProps) => {
   const [sessions, setSessions] = useState<Session[]>([]);
   const [loading, setLoading] = useState(true);
+  const [overviewData, setOverviewData] = useState<AdminOverviewResponse | null>(null);
+  const [overviewLoading, setOverviewLoading] = useState(true);
 
   // Get tournament status helper
   const getTournamentStatus = (startDate: string, endDate: string) => {
@@ -48,20 +50,31 @@ const OverviewTab = ({ setActiveTab, tournaments = [] }: OverviewTabProps) => {
     }
   };
 
-  // Calculate dynamic stats based on real data
-  const activeTournaments = tournaments.filter(t => 
-    getTournamentStatus(t.startDate, t.endDate) === 'In Progress'
-  ).length;
-  
-  const totalRegisteredTeams = tournaments.reduce((sum, t) => sum + (t.registeredTeams?.length || 0), 0);
-
   useEffect(() => {
     fetchSessions();
+    fetchAdminOverview();
   }, []);
+
+  const fetchAdminOverview = async () => {
+    try {
+      setOverviewLoading(true);
+      const response = await analyticsAPI.getAdminOverview();
+      if (response.success) {
+        setOverviewData(response);
+      } else {
+        toast.error("Failed to load admin overview");
+      }
+    } catch (error) {
+      toast.error("Server error while loading admin overview");
+      console.error("Error fetching admin overview:", error);
+    } finally {
+      setOverviewLoading(false);
+    }
+  };
 
   const fetchSessions = async () => {
     try {
-      const response = await fetch("http://localhost:5000/api/sessions");
+      const response = await fetch("http://localhost:9000/api/sessions");
       const data = await response.json();
       if (response.ok) {
         setSessions(data);
@@ -100,20 +113,46 @@ const OverviewTab = ({ setActiveTab, tournaments = [] }: OverviewTabProps) => {
     return session.status === "scheduled" && sessionDate >= new Date();
   });
 
-  const stats = [
-    { icon: Users, label: "Total Players", value: "1,247", change: "+12%" },
-    { icon: Trophy, label: "Active Tournaments", value: activeTournaments.toString(), change: tournaments.length > 0 ? "+2" : "0" },
-    { icon: Target, label: "Teams Registered", value: totalRegisteredTeams.toString(), change: "+18%" },
-    { icon: TrendingUp, label: "Avg Spirit Score", value: "14.2", change: "+0.8" },
-    { icon: Calendar, label: "Sessions This Month", value: "42", change: "+5" },
-    { icon: CheckCircle, label: "Attendance Rate", value: "87%", change: "+3%" },
+  // Use real data from backend or fallback to defaults
+  const stats = overviewData ? [
+    { icon: Users, label: "Total Players", value: overviewData.data.stats.totalPlayers.value, change: overviewData.data.stats.totalPlayers.change },
+    { icon: Trophy, label: "Active Tournaments", value: overviewData.data.stats.activeTournaments.value, change: overviewData.data.stats.activeTournaments.change },
+    { icon: Target, label: "Teams Registered", value: overviewData.data.stats.teamsRegistered.value, change: overviewData.data.stats.teamsRegistered.change },
+    { icon: TrendingUp, label: "Avg Spirit Score", value: overviewData.data.stats.avgSpiritScore.value, change: overviewData.data.stats.avgSpiritScore.change },
+    { icon: Calendar, label: "Sessions This Month", value: overviewData.data.stats.sessionsThisMonth.value, change: overviewData.data.stats.sessionsThisMonth.change },
+    { icon: CheckCircle, label: "Attendance Rate", value: overviewData.data.stats.attendanceRate.value, change: overviewData.data.stats.attendanceRate.change },
+  ] : [
+    { icon: Users, label: "Total Players", value: "0", change: "0%" },
+    { icon: Trophy, label: "Active Tournaments", value: "0", change: "0" },
+    { icon: Target, label: "Teams Registered", value: "0", change: "0%" },
+    { icon: TrendingUp, label: "Avg Spirit Score", value: "0.0", change: "0" },
+    { icon: Calendar, label: "Sessions This Month", value: "0", change: "0%" },
+    { icon: CheckCircle, label: "Attendance Rate", value: "0%", change: "0%" },
   ];
 
   return (
     <>
       {/* Stats Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
-        {stats.map((stat, index) => (
+      {overviewLoading ? (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          {[1, 2, 3, 4, 5, 6].map((i) => (
+            <Card key={i} className="glass-card animate-pulse">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground h-4 w-24 bg-gray-200 rounded"></CardTitle>
+                <div className="p-2 bg-gray-200 rounded-lg w-8 h-8"></div>
+              </CardHeader>
+              <CardContent>
+                <div className="flex items-baseline justify-between">
+                  <div className="text-3xl font-bold h-8 w-16 bg-gray-200 rounded"></div>
+                  <div className="text-sm h-4 w-12 bg-gray-200 rounded"></div>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-8">
+          {stats.map((stat, index) => (
           <Card 
             key={index} 
             className="glass-card glass-hover hover:-translate-y-1 animate-slide-up glow-blue"
@@ -135,7 +174,8 @@ const OverviewTab = ({ setActiveTab, tournaments = [] }: OverviewTabProps) => {
             </CardContent>
           </Card>
         ))}
-      </div>
+        </div>
+      )}
 
       {/* Quick Actions */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
@@ -148,9 +188,9 @@ const OverviewTab = ({ setActiveTab, tournaments = [] }: OverviewTabProps) => {
           </CardHeader>
           <CardContent className="space-y-4">
             {[
-              { title: "Account Requests", count: 4, action: "Review", tab: "accounts" },
-              { title: "Volunteer Applications", count: 3, action: "Review", tab: "volunteers" },
-              { title: "Tournament Approvals", count: 2, action: "Approve", tab: "tournaments" }
+              { title: "Account Requests", count: overviewData?.data.pendingActions.accountRequests || 0, action: "Review", tab: "accounts" },
+              { title: "Volunteer Applications", count: overviewData?.data.pendingActions.volunteerApplications || 0, action: "Review", tab: "volunteers" },
+              { title: "Tournament Approvals", count: overviewData?.data.pendingActions.tournamentApprovals || 0, action: "Approve", tab: "tournaments" }
             ].map((item, index) => (
               <div key={index} className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-orange-500/5 to-orange-600/5 hover:from-orange-500/10 hover:to-orange-600/10 transition-all">
                 <div>
@@ -176,28 +216,28 @@ const OverviewTab = ({ setActiveTab, tournaments = [] }: OverviewTabProps) => {
             <div className="p-4 rounded-lg bg-gradient-to-r from-blue-500/10 to-blue-600/10">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm text-muted-foreground">Active Users</span>
-                <span className="text-2xl font-bold">892</span>
+                <span className="text-2xl font-bold">{overviewData?.data.quickStats.activeUsers || 0}</span>
               </div>
               <div className="w-full bg-muted rounded-full h-2">
-                <div className="bg-blue-600 h-2 rounded-full" style={{ width: "71%" }}></div>
+                <div className="bg-blue-600 h-2 rounded-full" style={{ width: `${overviewData?.data.quickStats.activeUsers ? Math.min(100, (overviewData.data.quickStats.activeUsers / 1000) * 100) : 0}%` }}></div>
               </div>
             </div>
             <div className="p-4 rounded-lg bg-gradient-to-r from-green-500/10 to-green-600/10">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm text-muted-foreground">Sessions Booked</span>
-                <span className="text-2xl font-bold">35/42</span>
+                <span className="text-2xl font-bold">{overviewData?.data.quickStats.sessionsBooked || "0/0"}</span>
               </div>
               <div className="w-full bg-muted rounded-full h-2">
-                <div className="bg-green-600 h-2 rounded-full" style={{ width: "83%" }}></div>
+                <div className="bg-green-600 h-2 rounded-full" style={{ width: `${overviewData?.data.quickStats.sessionsBookedPercentage || 0}%` }}></div>
               </div>
             </div>
             <div className="p-4 rounded-lg bg-gradient-to-r from-purple-500/10 to-purple-600/10">
               <div className="flex justify-between items-center mb-2">
                 <span className="text-sm text-muted-foreground">Tournament Capacity</span>
-                <span className="text-2xl font-bold">156/200</span>
+                <span className="text-2xl font-bold">{overviewData?.data.quickStats.tournamentCapacity || "0/0"}</span>
               </div>
               <div className="w-full bg-muted rounded-full h-2">
-                <div className="bg-purple-600 h-2 rounded-full" style={{ width: "78%" }}></div>
+                <div className="bg-purple-600 h-2 rounded-full" style={{ width: `${overviewData?.data.quickStats.tournamentCapacityPercentage || 0}%` }}></div>
               </div>
             </div>
           </CardContent>

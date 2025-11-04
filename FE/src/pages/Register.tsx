@@ -39,8 +39,8 @@ const Register = () => {
     try {
       setLoadingInstitutions(true);
       const [schoolsRes, communitiesRes] = await Promise.all([
-        fetch("http://localhost:5000/api/institutions/schools"),
-        fetch("http://localhost:5000/api/institutions/communities"),
+        fetch("http://localhost:9000/api/institutions/schools"),
+        fetch("http://localhost:9000/api/institutions/communities"),
       ]);
 
       if (schoolsRes.ok) {
@@ -108,7 +108,7 @@ const Register = () => {
         requestBody.affiliationId = formData.affiliationId;
       }
 
-      const response = await fetch("http://localhost:5000/api/auth/signup/player", {
+      const response = await fetch("http://localhost:9000/api/auth/signup/player", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestBody),

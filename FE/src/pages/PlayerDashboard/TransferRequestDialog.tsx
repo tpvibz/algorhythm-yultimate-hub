@@ -34,8 +34,8 @@ const TransferRequestDialog = ({ open, onOpenChange, player, onSuccess }: Transf
     try {
       setLoadingInstitutions(true);
       const [schoolsRes, communitiesRes] = await Promise.all([
-        fetch("http://localhost:5000/api/institutions/schools"),
-        fetch("http://localhost:5000/api/institutions/communities"),
+        fetch("http://localhost:9000/api/institutions/schools"),
+        fetch("http://localhost:9000/api/institutions/communities"),
       ]);
 
       if (schoolsRes.ok) {
@@ -70,7 +70,7 @@ const TransferRequestDialog = ({ open, onOpenChange, player, onSuccess }: Transf
     setLoading(true);
     try {
       const response = await fetch(
-        `http://localhost:5000/api/player/${player._id}/transfer-request`,
+        `http://localhost:9000/api/player/${player._id}/transfer-request`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

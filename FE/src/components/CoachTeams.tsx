@@ -19,8 +19,8 @@ const CoachTeams = ({ open, onOpenChange }) => {
 
         // Prefer protected endpoint but allow coachId query as fallback
         const url = coachId
-          ? `http://localhost:5000/api/teams/mine?coachId=${encodeURIComponent(coachId)}`
-          : `http://localhost:5000/api/teams/mine`;
+          ? `http://localhost:9000/api/teams/mine?coachId=${encodeURIComponent(coachId)}`
+          : `http://localhost:9000/api/teams/mine`;
 
         const res = await fetch(url, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},

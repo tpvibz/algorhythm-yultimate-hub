@@ -7,7 +7,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Upload, X, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import axios from 'axios';
+import { tournamentAPI } from '@/services/api';
 
 interface CreateTournamentProps {
   onClose?: () => void;
@@ -82,6 +82,41 @@ const CreateTournament = ({ onClose, onSuccess }: CreateTournamentProps) => {
 
     try {
       // Validation
+      if (!formData.name.trim()) {
+        toast.error('Tournament name is required');
+        setIsLoading(false);
+        return;
+      }
+      if (!formData.location.trim()) {
+        toast.error('Location is required');
+        setIsLoading(false);
+        return;
+      }
+      if (!formData.division) {
+        toast.error('Division is required');
+        setIsLoading(false);
+        return;
+      }
+      if (!formData.format) {
+        toast.error('Format is required');
+        setIsLoading(false);
+        return;
+      }
+      if (!formData.prizePool.trim()) {
+        toast.error('Prize pool is required');
+        setIsLoading(false);
+        return;
+      }
+      if (!formData.description || formData.description.trim().length < 10) {
+        toast.error('Description must be at least 10 characters');
+        setIsLoading(false);
+        return;
+      }
+      if (!formData.rules || formData.rules.trim().length < 10) {
+        toast.error('Rules must be at least 10 characters');
+        setIsLoading(false);
+        return;
+      }
       if (new Date(formData.endDate) <= new Date(formData.startDate)) {
         toast.error('End date must be after start date');
         setIsLoading(false);
@@ -90,6 +125,14 @@ const CreateTournament = ({ onClose, onSuccess }: CreateTournamentProps) => {
 
       if (new Date(formData.registrationDeadline) >= new Date(formData.startDate)) {
         toast.error('Registration deadline must be before start date');
+        setIsLoading(false);
+        return;
+      }
+      // Optional: prevent start date in the past (mirrors backend rule allowing today)
+      const start = new Date(formData.startDate);
+      const now = new Date();
+      if (start < now && start.toDateString() !== now.toDateString()) {
+        toast.error('Start date cannot be in the past');
         setIsLoading(false);
         return;
       }
@@ -112,22 +155,24 @@ const CreateTournament = ({ onClose, onSuccess }: CreateTournamentProps) => {
         submitData.append('image', selectedImage);
       }
 
-      const response = await axios.post('http://localhost:5000/api/tournaments', submitData, {
-        headers: {
-          'Content-Type': 'multipart/form-data',
-        },
-      });
+      const response = await tournamentAPI.createTournament(submitData);
 
-      if (response.data.success) {
+      if (response.success) {
         toast.success('Tournament created successfully!');
         handleCancel();
         if (onSuccess) onSuccess();
       } else {
-        toast.error(response.data.message || 'Failed to create tournament');
+        toast.error(response.message || 'Failed to create tournament');
       }
     } catch (error: any) {
       console.error('Error creating tournament:', error);
-      toast.error(error.response?.data?.message || 'Failed to create tournament');
+      const backendErrors = error?.response?.data?.errors as Array<{ msg: string }>|undefined;
+      if (Array.isArray(backendErrors) && backendErrors.length > 0) {
+        backendErrors.slice(0, 3).forEach((e) => toast.error(e.msg));
+      } else {
+        const msg = error?.response?.data?.message || error?.message || 'Failed to create tournament';
+        toast.error(msg);
+      }
     } finally {
       setIsLoading(false);
     }

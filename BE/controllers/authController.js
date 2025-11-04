@@ -9,6 +9,7 @@ import CoachProfile from "../models/coachProfileModel.js";
 import Notification from "../models/notificationModel.js";
 import School from "../models/schoolModel.js";
 import sendMail from "../utils/sendMail.js";
+import { createNotification } from "./notificationController.js";
 
 const JWT_SECRET = process.env.JWT_SECRET || "tamui_secret";
 
@@ -88,6 +89,26 @@ export const playerSignup = async (req, res) => {
       passwordHash,
     });
     await newRequest.save();
+
+    // Notify all admins about the new account request
+    try {
+      const admins = await Person.find({ roles: { $in: ["admin"] } });
+      const adminIds = admins.map(admin => admin._id);
+      
+      const roleLabel = role === "player" ? "Player" : role === "volunteer" ? "Volunteer" : "Coach";
+      await Promise.all(adminIds.map(adminId => 
+        createNotification(
+          adminId,
+          "account_request",
+          "New Account Request",
+          `${firstName} ${lastName} has applied for ${roleLabel} account.`,
+          { relatedEntityId: newRequest._id, relatedEntityType: "role_request" }
+        )
+      ));
+    } catch (notificationError) {
+      console.error("Error creating notification for account request:", notificationError);
+      // Don't fail the request if notification fails
+    }
 
     res.status(201).json({
       message: "Signup request submitted successfully. Wait for admin approval.",
@@ -189,6 +210,16 @@ export const approvePlayer = async (req, res) => {
       if (finalCoachId) {
         const coach = await Person.findById(finalCoachId);
         if (coach) {
+          // Create in-app notification for coach
+          await createNotification(
+            finalCoachId,
+            "player_assigned",
+            "New Player Assigned",
+            `A new player ${request.applicantInfo.firstName} ${request.applicantInfo.lastName} has been assigned to you.`,
+            { relatedEntityId: newPerson._id, relatedEntityType: "player" }
+          );
+
+          // Legacy email notification
           await Notification.create({
             recipient: coach.email,
             messageType: "playerAssigned",
@@ -205,12 +236,39 @@ export const approvePlayer = async (req, res) => {
           );
         }
       }
+
+      // Notify the player that they've been assigned to a coach
+      if (finalCoachId) {
+        const coach = await Person.findById(finalCoachId);
+        if (coach) {
+          await createNotification(
+            newPerson._id,
+            "coach_assigned",
+            "Coach Assigned",
+            `You have been assigned to Coach ${coach.firstName} ${coach.lastName}.`,
+            { relatedEntityId: finalCoachId, relatedEntityType: "coach" }
+          );
+        }
+      }
     }
 
     // Update request
     request.status = "approved";
     request.reviewedAt = new Date();
     await request.save();
+
+    // Notify the user that their account has been approved
+    try {
+      await createNotification(
+        newPerson._id,
+        "account_approved",
+        "Account Approved",
+        `Your ${request.requestedRole} account has been approved! Your User ID is ${uniqueUserId}.`,
+        { relatedEntityId: newPerson._id, relatedEntityType: "account" }
+      );
+    } catch (notificationError) {
+      console.error("Error creating notification for account approval:", notificationError);
+    }
 
     // Save credentials (only ID)
     await CredentialPool.create({
@@ -326,6 +384,22 @@ export const rejectRequest = async (req, res) => {
     request.status = "rejected";
     request.reviewedAt = new Date();
     await request.save();
+
+    // Notify the user if they have an account (in case they registered before rejection)
+    try {
+      const person = await Person.findOne({ email: request.applicantInfo.email });
+      if (person) {
+        await createNotification(
+          person._id,
+          "account_rejected",
+          "Account Request Rejected",
+          `Your ${request.requestedRole} account request has been rejected. Please contact admin for more information.`,
+          { relatedEntityId: request._id, relatedEntityType: "role_request" }
+        );
+      }
+    } catch (notificationError) {
+      console.error("Error creating notification for account rejection:", notificationError);
+    }
 
     res.status(200).json({ message: "Request rejected successfully." });
   } catch (error) {

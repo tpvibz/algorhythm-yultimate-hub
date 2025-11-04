@@ -43,7 +43,7 @@ const StudentsTab = () => {
         return;
       }
 
-      const response = await fetch(`http://localhost:5000/api/students/coach/${coachId}`);
+      const response = await fetch(`http://localhost:9000/api/students/coach/${coachId}`);
       const data = await response.json();
       if (response.ok) {
         setStudents(Array.isArray(data) ? data : []);

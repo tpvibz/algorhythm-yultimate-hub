@@ -40,7 +40,7 @@ const HomeVisitForm = ({ studentId, onClose, onSuccess }: HomeVisitFormProps) =>
       }
 
       const response = await fetch(
-        `http://localhost:5000/api/students/${studentId}/home-visits`,
+        `http://localhost:9000/api/students/${studentId}/home-visits`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

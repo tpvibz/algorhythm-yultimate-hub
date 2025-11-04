@@ -1,33 +1,89 @@
-import { useState } from "react";
-import { Bell, X, Check, AlertCircle, Trophy, Calendar, Users, Shield, Heart, Clipboard, Clock, CheckCircle } from "lucide-react";
+import { useState, useEffect } from "react";
+import { Bell, X, Check, Heart } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-
+import { notificationAPI, Notification } from "@/services/api";
+import { toast } from "sonner";
+import { getNotificationIcon, getNotificationColor } from "@/utils/notificationUtils";
 
 export const VolunteerNotifications = () => {
   const [isOpen, setIsOpen] = useState(false);
-  const [notifications, setNotifications] = useState([
-    { id: 1, type: "assignment", icon: CheckCircle, title: "Assignment Approved", message: "You're assigned as Score Keeper for Summer Championship", time: "5 min ago", unread: true, color: "green" },
-    { id: 2, type: "shift", icon: Clock, title: "Shift Reminder", message: "Your volunteer shift starts in 1 hour", time: "20 min ago", unread: true, color: "orange" },
-    { id: 3, type: "opportunity", icon: Heart, title: "New Volunteer Opportunity", message: "Youth Development League needs Field Marshal", time: "2 hours ago", unread: true, color: "green" },
-    { id: 4, type: "thanks", icon: Trophy, title: "Thank You!", message: "Tournament organizers appreciated your service", time: "1 day ago", unread: false, color: "purple" },
-    { id: 5, type: "update", icon: AlertCircle, title: "Schedule Update", message: "Tournament start time changed to 9:00 AM", time: "2 days ago", unread: false, color: "blue" }
-  ]);
+  const [notifications, setNotifications] = useState<Notification[]>([]);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [loading, setLoading] = useState(false);
 
-  const unreadCount = notifications.filter(n => n.unread).length;
+  useEffect(() => {
+    fetchNotifications();
+    fetchUnreadCount();
+    const interval = setInterval(() => {
+      fetchNotifications();
+      fetchUnreadCount();
+    }, 30000);
+    return () => clearInterval(interval);
+  }, []);
 
-  const markAsRead = (id) => {
-    setNotifications(notifications.map(n => 
-      n.id === id ? { ...n, unread: false } : n
-    ));
+  const fetchNotifications = async () => {
+    try {
+      setLoading(true);
+      const response = await notificationAPI.getNotifications();
+      if (response.success) {
+        setNotifications(response.data.notifications);
+        setUnreadCount(response.data.unreadCount);
+      }
+    } catch (error) {
+      console.error("Error fetching notifications:", error);
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const markAllAsRead = () => {
-    setNotifications(notifications.map(n => ({ ...n, unread: false })));
+  const fetchUnreadCount = async () => {
+    try {
+      const response = await notificationAPI.getUnreadCount();
+      if (response.success) {
+        setUnreadCount(response.data.unreadCount);
+      }
+    } catch (error) {
+      console.error("Error fetching unread count:", error);
+    }
   };
 
-  const deleteNotification = (id) => {
-    setNotifications(notifications.filter(n => n.id !== id));
+  const markAsRead = async (id: string) => {
+    try {
+      await notificationAPI.markAsRead(id);
+      setNotifications(notifications.map(n => 
+        n._id === id ? { ...n, read: true } : n
+      ));
+      setUnreadCount(Math.max(0, unreadCount - 1));
+    } catch (error) {
+      toast.error("Failed to mark notification as read");
+      console.error("Error marking notification as read:", error);
+    }
+  };
+
+  const markAllAsRead = async () => {
+    try {
+      await notificationAPI.markAllAsRead();
+      setNotifications(notifications.map(n => ({ ...n, read: true })));
+      setUnreadCount(0);
+    } catch (error) {
+      toast.error("Failed to mark all notifications as read");
+      console.error("Error marking all notifications as read:", error);
+    }
+  };
+
+  const deleteNotification = async (id: string) => {
+    try {
+      await notificationAPI.deleteNotification(id);
+      const notification = notifications.find(n => n._id === id);
+      setNotifications(notifications.filter(n => n._id !== id));
+      if (notification && !notification.read) {
+        setUnreadCount(Math.max(0, unreadCount - 1));
+      }
+    } catch (error) {
+      toast.error("Failed to delete notification");
+      console.error("Error deleting notification:", error);
+    }
   };
 
   return (
@@ -73,53 +129,62 @@ export const VolunteerNotifications = () => {
               </div>
             </CardHeader>
             <CardContent className="p-0 overflow-y-auto max-h-[500px]">
-              {notifications.length === 0 ? (
+              {loading ? (
+                <div className="p-8 text-center text-muted-foreground">
+                  <Bell className="h-12 w-12 mx-auto mb-3 opacity-20 animate-pulse" />
+                  <p>Loading notifications...</p>
+                </div>
+              ) : notifications.length === 0 ? (
                 <div className="p-8 text-center text-muted-foreground">
                   <Bell className="h-12 w-12 mx-auto mb-3 opacity-20" />
                   <p>No notifications</p>
                 </div>
               ) : (
                 <div className="divide-y divide-border">
-                  {notifications.map((notif) => (
-                    <div
-                      key={notif.id}
-                      className={`p-4 hover:bg-muted/50 transition-colors ${notif.unread ? 'bg-green-500/5' : ''}`}
-                    >
-                      <div className="flex gap-3">
-                        <div className={`p-2 rounded-lg bg-gradient-to-br from-${notif.color}-500/10 to-${notif.color}-600/10 h-fit`}>
-                          <notif.icon className={`h-4 w-4 text-${notif.color}-600`} />
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-start justify-between gap-2">
-                            <h4 className="font-semibold text-sm">{notif.title}</h4>
-                            {notif.unread && (
-                              <div className="w-2 h-2 rounded-full bg-green-600 flex-shrink-0 mt-1"></div>
-                            )}
+                  {notifications.map((notif) => {
+                    const Icon = getNotificationIcon(notif.type);
+                    const color = getNotificationColor(notif.type);
+                    return (
+                      <div
+                        key={notif._id}
+                        className={`p-4 hover:bg-muted/50 transition-colors ${notif.read ? '' : 'bg-green-500/5'}`}
+                      >
+                        <div className="flex gap-3">
+                          <div className={`p-2 rounded-lg bg-gradient-to-br from-${color}-500/10 to-${color}-600/10 h-fit`}>
+                            <Icon className={`h-4 w-4 text-${color}-600`} />
                           </div>
-                          <p className="text-sm text-muted-foreground mt-1">{notif.message}</p>
-                          <div className="flex items-center justify-between mt-2">
-                            <span className="text-xs text-muted-foreground">{notif.time}</span>
-                            <div className="flex gap-1">
-                              {notif.unread && (
-                                <button
-                                  onClick={() => markAsRead(notif.id)}
-                                  className="text-xs px-2 py-1 rounded bg-green-500/10 text-green-600 hover:bg-green-500/20"
-                                >
-                                  <Check className="h-3 w-3" />
-                                </button>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-start justify-between gap-2">
+                              <h4 className="font-semibold text-sm">{notif.title}</h4>
+                              {!notif.read && (
+                                <div className="w-2 h-2 rounded-full bg-green-600 flex-shrink-0 mt-1"></div>
                               )}
-                              <button
-                                onClick={() => deleteNotification(notif.id)}
-                                className="text-xs px-2 py-1 rounded bg-red-500/10 text-red-600 hover:bg-red-500/20"
-                              >
-                                <X className="h-3 w-3" />
-                              </button>
+                            </div>
+                            <p className="text-sm text-muted-foreground mt-1">{notif.message}</p>
+                            <div className="flex items-center justify-between mt-2">
+                              <span className="text-xs text-muted-foreground">{notif.time}</span>
+                              <div className="flex gap-1">
+                                {!notif.read && (
+                                  <button
+                                    onClick={() => markAsRead(notif._id)}
+                                    className="text-xs px-2 py-1 rounded bg-green-500/10 text-green-600 hover:bg-green-500/20"
+                                  >
+                                    <Check className="h-3 w-3" />
+                                  </button>
+                                )}
+                                <button
+                                  onClick={() => deleteNotification(notif._id)}
+                                  className="text-xs px-2 py-1 rounded bg-red-500/10 text-red-600 hover:bg-red-500/20"
+                                >
+                                  <X className="h-3 w-3" />
+                                </button>
+                              </div>
                             </div>
                           </div>
                         </div>
                       </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </CardContent>

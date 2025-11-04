@@ -2,6 +2,7 @@ import MatchImage from "../models/matchImageModel.js";
 import Match from "../models/matchModel.js";
 import VolunteerTournamentAssignment from "../models/volunteerTournamentAssignmentModel.js";
 import Tournament from "../models/tournamentModel.js";
+import cloudinary from "../config/cloudinary.js";
 
 // Upload image for a match
 export const uploadMatchImage = async (req, res) => {
@@ -42,8 +43,19 @@ export const uploadMatchImage = async (req, res) => {
       }
     }
 
-    // Create image path
-    const imageUrl = `/uploads/matches/${req.file.filename}`;
+    // Upload to Cloudinary
+    const folder = "algorhythm/matches";
+    const uploadResult = await new Promise((resolve, reject) => {
+      const stream = cloudinary.uploader.upload_stream(
+        { folder, resource_type: "image" },
+        (error, result) => {
+          if (error) return reject(error);
+          resolve(result);
+        }
+      );
+      stream.end(req.file.buffer);
+    });
+    const imageUrl = uploadResult.secure_url || uploadResult.url;
 
     // Save image record to database
     const matchImage = await MatchImage.create({
@@ -354,8 +366,7 @@ export const deleteMatchImage = async (req, res) => {
       }
     }
 
-    // Delete file from filesystem (optional - you may want to keep files)
-    // For now, we'll just delete from database
+    // Note: We are not deleting from Cloudinary here. Add public_id tracking to enable it later.
 
     await MatchImage.findByIdAndDelete(imageId);
 

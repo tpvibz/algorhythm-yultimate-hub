@@ -48,7 +48,7 @@ const AttendanceTab = () => {
   const fetchSessions = async (coachId: string) => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:5000/api/sessions/coach/${coachId}`);
+      const response = await fetch(`http://localhost:9000/api/sessions/coach/${coachId}`);
       const data = await response.json();
       if (response.ok) {
         const sessionsData = Array.isArray(data) ? data : [];
@@ -84,7 +84,7 @@ const AttendanceTab = () => {
       if (sessionIds.length === 0) return;
 
       const response = await fetch(
-        `http://localhost:5000/api/attendance/sessions?sessionIds=${sessionIds.join(",")}`
+        `http://localhost:9000/api/attendance/sessions?sessionIds=${sessionIds.join(",")}`
       );
       if (response.ok) {
         const data = await response.json();
@@ -148,7 +148,7 @@ const AttendanceTab = () => {
         date: new Date(session.scheduledStart),
       }));
 
-      const response = await fetch("http://localhost:5000/api/attendance/mark", {
+      const response = await fetch("http://localhost:9000/api/attendance/mark", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

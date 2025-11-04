@@ -1,220 +1,354 @@
-// Schedule.tsx
-import React, { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Navbar from "@/components/Navbar";
 import BottomNav from "@/components/BottomNav";
 import { Card } from "@/components/ui/card";
-import { Calendar, MapPin } from 'lucide-react';
+import { Calendar, MapPin, RefreshCw } from 'lucide-react';
+import { toast } from 'sonner';
 import MatchDetail from './MatchDetail';
-
-// Mock data for matches
-export const matchesData = [
-  {
-    id: 1,
-    date: "Nov 15, 2024",
-    time: "14:00",
-    venue: "Central Sports Complex",
-    status: "completed",
-    teamA: { name: "Thunder Strikers", score: 15 },
-    teamB: { name: "Sky Warriors", score: 12 },
-    youtubeId: "dQw4w9WgXcQ",
-    details: { duration: "90 mins", attendance: 450, weather: "Sunny, 24°C" },
-    teamAPlayers: [
-      { name: "John Smith", position: "Handler", points: 4, assists: 3, blocks: 2 },
-      { name: "Sarah Johnson", position: "Cutter", points: 6, assists: 2, blocks: 1 },
-      { name: "Mike Davis", position: "Handler", points: 3, assists: 5, blocks: 0 },
-      { name: "Emily Brown", position: "Cutter", points: 2, assists: 1, blocks: 3 }
-    ],
-    teamBPlayers: [
-      { name: "Alex Turner", position: "Handler", points: 5, assists: 4, blocks: 1 },
-      { name: "Jessica Lee", position: "Cutter", points: 4, assists: 2, blocks: 2 },
-      { name: "Chris Wilson", position: "Handler", points: 2, assists: 3, blocks: 1 },
-      { name: "Rachel Green", position: "Cutter", points: 1, assists: 2, blocks: 4 }
-    ],
-    highlights: [
-      "Amazing layout catch by Sarah Johnson at 23:45",
-      "Spectacular hammer throw by Alex Turner at 45:12",
-      "Game-winning point by Thunder Strikers at 87:30"
-    ]
-  },
-  {
-    id: 2,
-    date: "Nov 18, 2024",
-    time: "16:30",
-    venue: "Riverside Park",
-    status: "completed",
-    teamA: { name: "Phoenix Rising", score: 13 },
-    teamB: { name: "Wave Riders", score: 13 },
-    youtubeId: "jNQXAC9IVRw",
-    details: { duration: "105 mins", attendance: 380, weather: "Cloudy, 20°C" },
-    teamAPlayers: [
-      { name: "David Martinez", position: "Handler", points: 5, assists: 3, blocks: 1 },
-      { name: "Lisa Anderson", position: "Cutter", points: 4, assists: 2, blocks: 2 },
-      { name: "Tom Roberts", position: "Handler", points: 2, assists: 4, blocks: 1 },
-      { name: "Nina Patel", position: "Cutter", points: 2, assists: 1, blocks: 3 }
-    ],
-    teamBPlayers: [
-      { name: "Kevin Chang", position: "Handler", points: 6, assists: 3, blocks: 0 },
-      { name: "Amanda White", position: "Cutter", points: 3, assists: 3, blocks: 2 },
-      { name: "Brian Foster", position: "Handler", points: 2, assists: 2, blocks: 2 },
-      { name: "Sophie Miller", position: "Cutter", points: 2, assists: 1, blocks: 3 }
-    ],
-    highlights: [
-      "Incredible bid save by Nina Patel at 34:20",
-      "Perfect huck by Kevin Chang at 56:40",
-      "Dramatic tie at the final whistle"
-    ]
-  },
-  {
-    id: 3,
-    date: "Nov 22, 2024",
-    time: "15:00",
-    venue: "University Stadium",
-    status: "upcoming",
-    teamA: { name: "Storm Chasers", score: 0 },
-    teamB: { name: "Wind Runners", score: 0 },
-    youtubeId: "M7lc1UVf-VE",
-    details: { duration: "TBD", attendance: "Expected 500+", weather: "Forecast: Partly Cloudy" },
-    teamAPlayers: [
-      { name: "Marcus Brown", position: "Handler", points: 0, assists: 0, blocks: 0 },
-      { name: "Julia Chen", position: "Cutter", points: 0, assists: 0, blocks: 0 },
-      { name: "Ryan Taylor", position: "Handler", points: 0, assists: 0, blocks: 0 },
-      { name: "Olivia Moore", position: "Cutter", points: 0, assists: 0, blocks: 0 }
-    ],
-    teamBPlayers: [
-      { name: "Daniel Kim", position: "Handler", points: 0, assists: 0, blocks: 0 },
-      { name: "Emma Scott", position: "Cutter", points: 0, assists: 0, blocks: 0 },
-      { name: "Jason Lee", position: "Handler", points: 0, assists: 0, blocks: 0 },
-      { name: "Maria Garcia", position: "Cutter", points: 0, assists: 0, blocks: 0 }
-    ],
-    highlights: []
-  },
-  {
-    id: 4,
-    date: "Nov 25, 2024",
-    time: "13:00",
-    venue: "Metro Sports Arena",
-    status: "upcoming",
-    teamA: { name: "Lightning Bolts", score: 0 },
-    teamB: { name: "Thunder Strikers", score: 0 },
-    youtubeId: "9bZkp7q19f0",
-    details: { duration: "TBD", attendance: "Expected 600+", weather: "Forecast: Sunny" },
-    teamAPlayers: [
-      { name: "Peter Johnson", position: "Handler", points: 0, assists: 0, blocks: 0 },
-      { name: "Grace Liu", position: "Cutter", points: 0, assists: 0, blocks: 0 },
-      { name: "Sam Wilson", position: "Handler", points: 0, assists: 0, blocks: 0 },
-      { name: "Hannah Davis", position: "Cutter", points: 0, assists: 0, blocks: 0 }
-    ],
-    teamBPlayers: [
-      { name: "John Smith", position: "Handler", points: 0, assists: 0, blocks: 0 },
-      { name: "Sarah Johnson", position: "Cutter", points: 0, assists: 0, blocks: 0 },
-      { name: "Mike Davis", position: "Handler", points: 0, assists: 0, blocks: 0 },
-      { name: "Emily Brown", position: "Cutter", points: 0, assists: 0, blocks: 0 }
-    ],
-    highlights: []
-  },
-  {
-    id: 5,
-    date: "Nov 28, 2024",
-    time: "17:00",
-    venue: "Coastal Field",
-    status: "upcoming",
-    teamA: { name: "Wave Riders", score: 0 },
-    teamB: { name: "Phoenix Rising", score: 0 },
-    youtubeId: "kJQP7kiw5Fk",
-    details: { duration: "TBD", attendance: "Expected 400+", weather: "Forecast: Windy" },
-    teamAPlayers: [
-      { name: "Kevin Chang", position: "Handler", points: 0, assists: 0, blocks: 0 },
-      { name: "Amanda White", position: "Cutter", points: 0, assists: 0, blocks: 0 },
-      { name: "Brian Foster", position: "Handler", points: 0, assists: 0, blocks: 0 },
-      { name: "Sophie Miller", position: "Cutter", points: 0, assists: 0, blocks: 0 }
-    ],
-    teamBPlayers: [
-      { name: "David Martinez", position: "Handler", points: 0, assists: 0, blocks: 0 },
-      { name: "Lisa Anderson", position: "Cutter", points: 0, assists: 0, blocks: 0 },
-      { name: "Tom Roberts", position: "Handler", points: 0, assists: 0, blocks: 0 },
-      { name: "Nina Patel", position: "Cutter", points: 0, assists: 0, blocks: 0 }
-    ],
-    highlights: []
-  },
-  {
-    id: 6,
-    date: "Dec 2, 2024",
-    time: "14:30",
-    venue: "Championship Grounds",
-    status: "upcoming",
-    teamA: { name: "Sky Warriors", score: 0 },
-    teamB: { name: "Storm Chasers", score: 0 },
-    youtubeId: "L_jWHffIx5E",
-    details: { duration: "TBD", attendance: "Expected 700+", weather: "Forecast: Clear" },
-    teamAPlayers: [
-      { name: "Alex Turner", position: "Handler", points: 0, assists: 0, blocks: 0 },
-      { name: "Jessica Lee", position: "Cutter", points: 0, assists: 0, blocks: 0 },
-      { name: "Chris Wilson", position: "Handler", points: 0, assists: 0, blocks: 0 },
-      { name: "Rachel Green", position: "Cutter", points: 0, assists: 0, blocks: 0 }
-    ],
-    teamBPlayers: [
-      { name: "Marcus Brown", position: "Handler", points: 0, assists: 0, blocks: 0 },
-      { name: "Julia Chen", position: "Cutter", points: 0, assists: 0, blocks: 0 },
-      { name: "Ryan Taylor", position: "Handler", points: 0, assists: 0, blocks: 0 },
-      { name: "Olivia Moore", position: "Cutter", points: 0, assists: 0, blocks: 0 }
-    ],
-    highlights: []
-  }
-];
+import { tournamentAPI, scheduleAPI, Match, Tournament, handleAPIError } from '@/services/api';
 
 const Schedule = () => {
-  const [selectedMatch, setSelectedMatch] = useState(null);
+  const [selectedMatch, setSelectedMatch] = useState<any>(null);
+  const [matches, setMatches] = useState<Match[]>([]);
+  const [tournaments, setTournaments] = useState<Tournament[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [selectedTournament, setSelectedTournament] = useState<string | null>(null);
+
+  useEffect(() => {
+    fetchTournaments();
+  }, []);
+
+  useEffect(() => {
+    if (tournaments.length > 0) {
+      if (selectedTournament) {
+        fetchMatchesForTournament(selectedTournament);
+      } else {
+        // Fetch matches for all tournaments
+        fetchAllMatches();
+      }
+    }
+  }, [tournaments, selectedTournament]);
+
+  const fetchTournaments = async () => {
+    try {
+      setLoading(true);
+      const response = await tournamentAPI.getAllTournaments();
+      if (response.success) {
+        setTournaments(response.data.tournaments);
+      } else {
+        toast.error(response.message || "Failed to load tournaments");
+      }
+    } catch (error) {
+      console.error("Error fetching tournaments:", error);
+      toast.error(handleAPIError(error));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchAllMatches = async () => {
+    try {
+      setLoading(true);
+      const allMatches: Match[] = [];
+      
+      // Fetch matches for each tournament
+      for (const tournament of tournaments) {
+        try {
+          const response = await scheduleAPI.getMatchesByTournament(tournament._id);
+          if (response.success && response.data.matches) {
+            allMatches.push(...response.data.matches);
+          }
+        } catch (error) {
+          // Continue if one tournament fails
+          console.error(`Error fetching matches for tournament ${tournament._id}:`, error);
+        }
+      }
+      
+      // Sort matches by start time
+      allMatches.sort((a, b) => {
+        const dateA = new Date(a.startTime).getTime();
+        const dateB = new Date(b.startTime).getTime();
+        return dateB - dateA; // Most recent first
+      });
+      
+      setMatches(allMatches);
+    } catch (error) {
+      console.error("Error fetching all matches:", error);
+      toast.error(handleAPIError(error));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const fetchMatchesForTournament = async (tournamentId: string) => {
+    try {
+      setLoading(true);
+      const response = await scheduleAPI.getMatchesByTournament(tournamentId);
+      if (response.success) {
+        const sortedMatches = response.data.matches.sort((a: Match, b: Match) => {
+          const dateA = new Date(a.startTime).getTime();
+          const dateB = new Date(b.startTime).getTime();
+          return dateB - dateA;
+        });
+        setMatches(sortedMatches);
+      } else {
+        toast.error(response.message || "Failed to load matches");
+      }
+    } catch (error) {
+      console.error("Error fetching matches:", error);
+      toast.error(handleAPIError(error));
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const formatDate = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleDateString("en-US", {
+      month: "short",
+      day: "numeric",
+      year: "numeric"
+    });
+  };
+
+  const formatTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  };
+
+  const formatDateTime = (dateString: string) => {
+    const date = new Date(dateString);
+    return date.toLocaleString("en-US", {
+      month: "short",
+      day: "numeric",
+      hour: "2-digit",
+      minute: "2-digit"
+    });
+  };
+
+  // Transform backend Match to MatchDetail format
+  const transformMatchForDetail = (match: Match): any => {
+    const tournament = tournaments.find(t => t._id === match.tournamentId);
+    const dateStr = formatDate(match.startTime);
+    const timeStr = formatTime(match.startTime);
+    
+    // Calculate duration if match has end time
+    let duration = "TBD";
+    if (match.endTime && match.startTime) {
+      const start = new Date(match.startTime);
+      const end = new Date(match.endTime);
+      const diffMs = end.getTime() - start.getTime();
+      const diffMins = Math.round(diffMs / 60000);
+      duration = `${diffMins} mins`;
+    }
+
+    return {
+      id: match._id,
+      date: dateStr,
+      time: timeStr,
+      venue: match.fieldName || "TBD",
+      status: match.status === 'completed' ? 'completed' : 
+              match.status === 'ongoing' ? 'ongoing' : 'upcoming',
+      teamA: {
+        name: match.teamA.teamName,
+        score: match.score?.teamA || 0
+      },
+      teamB: {
+        name: match.teamB.teamName,
+        score: match.score?.teamB || 0
+      },
+      youtubeId: "dQw4w9WgXcQ", // Placeholder - not in backend yet
+      details: {
+        duration: match.status === 'completed' ? duration : "TBD",
+        attendance: match.status === 'completed' ? "N/A" : "Expected 500+",
+        weather: match.status === 'completed' ? "N/A" : "Forecast: Clear"
+      },
+      // Placeholder player data - not in backend yet
+      teamAPlayers: [],
+      teamBPlayers: [],
+      highlights: [],
+      tournamentName: tournament?.name || "Tournament"
+    };
+  };
+
+  // Filter matches by status
+  const completedMatches = matches.filter(m => m.status === 'completed');
+  const upcomingMatches = matches.filter(m => m.status === 'scheduled');
+  const ongoingMatches = matches.filter(m => m.status === 'ongoing');
 
   if (selectedMatch) {
-    return <MatchDetail match={selectedMatch} onBack={() => setSelectedMatch(null)} />;
+    const matchDetail = transformMatchForDetail(selectedMatch);
+    return <MatchDetail match={matchDetail} onBack={() => setSelectedMatch(null)} />;
   }
 
   return (
     <div className="min-h-screen">
       <Navbar />
       <main className="container mx-auto px-4 pt-24 pb-32">
-        <h1 className="text-4xl font-bold mb-8">Schedule & Results</h1>
-        <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {matchesData.map((match) => (
-            <Card 
-              key={match.id} 
-              className="glass-card glass-hover p-6 cursor-pointer"
-              onClick={() => setSelectedMatch(match)}
+        <div className="flex items-center justify-between mb-8">
+          <h1 className="text-4xl font-bold">Schedule & Results</h1>
+          <div className="flex items-center gap-4">
+            {/* Tournament Filter */}
+            {tournaments.length > 0 && (
+              <select
+                value={selectedTournament || ''}
+                onChange={(e) => setSelectedTournament(e.target.value || null)}
+                className="px-4 py-2 bg-background border border-border rounded-lg focus:outline-none focus:ring-2 focus:ring-primary"
+              >
+                <option value="">All Tournaments</option>
+                {tournaments.map((tournament) => (
+                  <option key={tournament._id} value={tournament._id}>
+                    {tournament.name}
+                  </option>
+                ))}
+              </select>
+            )}
+            <button
+              onClick={() => {
+                if (selectedTournament) {
+                  fetchMatchesForTournament(selectedTournament);
+                } else {
+                  fetchAllMatches();
+                }
+              }}
+              disabled={loading}
+              className="px-4 py-2 bg-primary text-primary-foreground rounded-lg hover:bg-primary/90 disabled:opacity-50 flex items-center gap-2"
             >
-              <div className="flex justify-between items-start mb-4">
-                <h3 className="text-xl font-semibold">Match {match.id}</h3>
-                <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
-                  match.status === 'completed' 
-                    ? 'bg-green-500/20 text-green-400' 
-                    : 'bg-blue-500/20 text-blue-400'
-                }`}>
-                  {match.status === 'completed' ? 'Final' : 'Upcoming'}
-                </span>
-              </div>
-              <p className="text-muted-foreground mb-2 flex items-center gap-2">
-                <Calendar size={16} />
-                {match.date} • {match.time}
-              </p>
-              <p className="text-muted-foreground mb-4 flex items-center gap-2">
-                <MapPin size={16} />
-                {match.venue}
-              </p>
-              <div className="space-y-2">
-                <div className="flex justify-between items-center p-2 bg-secondary/20 rounded">
-                  <span>{match.teamA.name}</span>
-                  <span className="font-bold">{match.teamA.score}</span>
-                </div>
-                <div className="flex justify-between items-center p-2 bg-secondary/20 rounded">
-                  <span>{match.teamB.name}</span>
-                  <span className="font-bold">{match.teamB.score}</span>
-                </div>
-              </div>
-            </Card>
-          ))}
+              <RefreshCw className={`h-4 w-4 ${loading ? 'animate-spin' : ''}`} />
+              Refresh
+            </button>
+          </div>
         </div>
+
+        {loading ? (
+          <div className="flex items-center justify-center py-12">
+            <div className="text-center">
+              <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary mx-auto mb-4"></div>
+              <p className="text-muted-foreground">Loading matches...</p>
+            </div>
+          </div>
+        ) : matches.length === 0 ? (
+          <Card className="glass-card p-12 text-center">
+            <Calendar className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No matches found</h3>
+            <p className="text-muted-foreground">
+              {selectedTournament 
+                ? "There are no matches scheduled for this tournament yet."
+                : "There are no matches scheduled yet."}
+            </p>
+          </Card>
+        ) : (
+          <div className="space-y-8">
+            {/* Ongoing Matches */}
+            {ongoingMatches.length > 0 && (
+              <div>
+                <h2 className="text-2xl font-bold mb-4 text-blue-400">Live Matches</h2>
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {ongoingMatches.map((match) => (
+                    <MatchCard 
+                      key={match._id} 
+                      match={match} 
+                      onClick={() => setSelectedMatch(match)}
+                      formatDate={formatDate}
+                      formatTime={formatTime}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Upcoming Matches */}
+            {upcomingMatches.length > 0 && (
+              <div>
+                <h2 className="text-2xl font-bold mb-4">Upcoming Matches</h2>
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {upcomingMatches.map((match) => (
+                    <MatchCard 
+                      key={match._id} 
+                      match={match} 
+                      onClick={() => setSelectedMatch(match)}
+                      formatDate={formatDate}
+                      formatTime={formatTime}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Completed Matches */}
+            {completedMatches.length > 0 && (
+              <div>
+                <h2 className="text-2xl font-bold mb-4 text-green-400">Completed Matches</h2>
+                <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                  {completedMatches.map((match) => (
+                    <MatchCard 
+                      key={match._id} 
+                      match={match} 
+                      onClick={() => setSelectedMatch(match)}
+                      formatDate={formatDate}
+                      formatTime={formatTime}
+                    />
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+        )}
       </main>
       <BottomNav />
     </div>
+  );
+};
+
+interface MatchCardProps {
+  match: Match;
+  onClick: () => void;
+  formatDate: (dateString: string) => string;
+  formatTime: (dateString: string) => string;
+}
+
+const MatchCard = ({ match, onClick, formatDate, formatTime }: MatchCardProps) => {
+  const matchNumber = match._id.slice(-4); // Use last 4 chars of ID as match number
+  
+  return (
+    <Card 
+      className="glass-card glass-hover p-6 cursor-pointer transition-all hover:scale-105"
+      onClick={onClick}
+    >
+      <div className="flex justify-between items-start mb-4">
+        <h3 className="text-xl font-semibold">Match {matchNumber}</h3>
+        <span className={`px-2 py-1 rounded-full text-xs font-semibold ${
+          match.status === 'completed' 
+            ? 'bg-green-500/20 text-green-400' 
+            : match.status === 'ongoing'
+            ? 'bg-blue-500/20 text-blue-400'
+            : 'bg-yellow-500/20 text-yellow-400'
+        }`}>
+          {match.status === 'completed' ? 'Final' : match.status === 'ongoing' ? 'Live' : 'Scheduled'}
+        </span>
+      </div>
+      <p className="text-muted-foreground mb-2 flex items-center gap-2">
+        <Calendar size={16} />
+        {formatDate(match.startTime)} • {formatTime(match.startTime)}
+      </p>
+      <p className="text-muted-foreground mb-4 flex items-center gap-2">
+        <MapPin size={16} />
+        {match.fieldName || 'Field TBD'}
+      </p>
+      <div className="space-y-2">
+        <div className="flex justify-between items-center p-2 bg-secondary/20 rounded">
+          <span className="truncate">{match.teamA.teamName}</span>
+          <span className="font-bold ml-2">{match.score?.teamA || 0}</span>
+        </div>
+        <div className="flex justify-between items-center p-2 bg-secondary/20 rounded">
+          <span className="truncate">{match.teamB.teamName}</span>
+          <span className="font-bold ml-2">{match.score?.teamB || 0}</span>
+        </div>
+      </div>
+    </Card>
   );
 };
 

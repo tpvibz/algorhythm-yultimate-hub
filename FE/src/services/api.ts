@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = 'http://localhost:5000/api';
+const API_BASE_URL = 'http://localhost:9000/api';
 
 // Create axios instance with default config
 const api = axios.create({
@@ -10,6 +10,34 @@ const api = axios.create({
     'Content-Type': 'application/json',
   },
 });
+
+// Add request interceptor to include auth token and language
+api.interceptors.request.use(
+  (config) => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers.Authorization = `Bearer ${token}`;
+    }
+    
+    // Add language parameter from localStorage or URL
+    const language = localStorage.getItem('app_language') || 
+                     new URLSearchParams(window.location.search).get('lang') || 
+                     'en';
+    
+    // Add language to query params if not already present
+    if (!config.params) {
+      config.params = {};
+    }
+    if (!config.params.lang) {
+      config.params.lang = language;
+    }
+    
+    return config;
+  },
+  (error) => {
+    return Promise.reject(error);
+  }
+);
 
 // Tournament interfaces
 export interface Tournament {
@@ -166,6 +194,13 @@ export interface Match {
     teamB: number;
   };
   winnerTeamId?: string;
+  round?: number;
+  roundName?: string;
+  bracketPosition?: number;
+  matchNumber?: number;
+  pool?: number;
+  parentMatchAId?: string;
+  parentMatchBId?: string;
 }
 
 export interface MatchesResponse {
@@ -235,6 +270,32 @@ export const scheduleAPI = {
   // Delete matches by tournament ID
   deleteMatchesByTournament: async (tournamentId: string): Promise<{ success: boolean; message: string; deletedCount: number }> => {
     const response = await api.delete(`/schedule/tournaments/${tournamentId}/matches`);
+    return response.data;
+  },
+};
+
+// Team API interfaces
+export interface TeamWithStats {
+  teamName: string;
+  players: string[];
+  wins: number;
+  losses: number;
+}
+
+export interface AllTeamsResponse {
+  success: boolean;
+  message?: string;
+  data: {
+    teams: TeamWithStats[];
+    count: number;
+  };
+}
+
+// Team API functions
+export const teamAPI = {
+  // Get all teams with stats
+  getAllTeams: async (): Promise<AllTeamsResponse> => {
+    const response = await api.get('/teams');
     return response.data;
   },
 };
@@ -712,6 +773,156 @@ export const matchImageAPI = {
   },
 };
 
+// Match Attendance interfaces
+export interface MatchPlayer {
+  _id?: string;
+  playerId?: string;
+  firstName?: string;
+  lastName?: string;
+  name?: string;
+  email?: string;
+  uniqueUserId?: string;
+  jerseyNumber?: number;
+  attendance?: {
+    status: 'present' | 'absent' | 'late';
+    recordedAt: string;
+    recordedBy: string;
+  } | null;
+}
+
+export interface MatchPlayersResponse {
+  success: boolean;
+  message?: string;
+  data: {
+    match: {
+      _id: string;
+      teamA: {
+        _id: string;
+        teamName: string;
+      };
+      teamB: {
+        _id: string;
+        teamName: string;
+      };
+      startTime: string;
+      status: string;
+    };
+    teamAPlayers: MatchPlayer[];
+    teamBPlayers: MatchPlayer[];
+  };
+}
+
+export interface MatchAttendanceStatusResponse {
+  success: boolean;
+  message?: string;
+  data: {
+    match: {
+      _id: string;
+      teamA: {
+        _id: string;
+        teamName: string;
+      };
+      teamB: {
+        _id: string;
+        teamName: string;
+      };
+    };
+    attendance: {
+      isComplete: boolean;
+      totalPlayers: number;
+      attendanceCount: number;
+      presentCount: number;
+      absentCount: number;
+      lateCount: number;
+      percentage: number;
+    };
+  };
+}
+
+export interface MatchAttendanceRecord {
+  _id: string;
+  matchId: string;
+  player: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+    email: string;
+    uniqueUserId: string;
+  };
+  team: {
+    _id: string;
+    teamName: string;
+  };
+  status: 'present' | 'absent' | 'late';
+  recordedBy: {
+    _id: string;
+    firstName: string;
+    lastName: string;
+  };
+  recordedAt: string;
+  createdAt: string;
+}
+
+export interface MatchAttendanceResponse {
+  success: boolean;
+  message?: string;
+  data: {
+    attendance: MatchAttendanceRecord[];
+    count: number;
+  };
+}
+
+// Match Attendance API functions
+export const matchAttendanceAPI = {
+  // Get all players for a match (from both teams)
+  getMatchPlayers: async (matchId: string): Promise<MatchPlayersResponse> => {
+    const response = await api.get(`/match-attendance/matches/${matchId}/players`);
+    return response.data;
+  },
+
+  // Check attendance status for a match
+  checkAttendanceStatus: async (matchId: string): Promise<MatchAttendanceStatusResponse> => {
+    const response = await api.get(`/match-attendance/matches/${matchId}/status`);
+    return response.data;
+  },
+
+  // Get attendance records for a match
+  getMatchAttendance: async (matchId: string): Promise<MatchAttendanceResponse> => {
+    const response = await api.get(`/match-attendance/matches/${matchId}/attendance`);
+    return response.data;
+  },
+
+  // Mark attendance for players in a match
+  markMatchAttendance: async (
+    matchId: string,
+    data: {
+      attendanceData: Array<{
+        playerId: string;
+        teamId: string;
+        status: 'present' | 'absent' | 'late';
+      }>;
+      volunteerId: string;
+    }
+  ): Promise<{
+    success: boolean;
+    message: string;
+    data: {
+      success: number;
+      failed: number;
+      results: Array<{
+        playerId: string;
+        playerName: string;
+        status: string;
+        attendanceId: string;
+      }>;
+      errors?: Array<{ playerId: string; error: string }>;
+    };
+  }> => {
+    const response = await api.post(`/match-attendance/matches/${matchId}/attendance`, data);
+    return response.data;
+  },
+};
+
 // Authentication API functions
 export const authAPI = {
   // Get pending account requests
@@ -739,6 +950,594 @@ export const authAPI = {
   },
 };
 
+// Feedback interfaces
+export interface MatchNeedingFeedback {
+  matchId: string;
+  matchNumber?: number;
+  roundName?: string;
+  startTime: string;
+  fieldName?: string;
+  tournament: {
+    _id: string;
+    name: string;
+    startDate: string;
+    endDate: string;
+    location: string;
+  } | null;
+  team: {
+    _id: string;
+    teamName: string;
+  };
+  opponentTeam: {
+    _id: string;
+    teamName: string;
+  } | null;
+  spiritScoreSubmitted: boolean;
+  playerFeedbackSubmitted: boolean;
+  playersNeedingFeedback: number;
+  totalPlayersAttended: number;
+  score: {
+    teamA: number;
+    teamB: number;
+  } | null;
+}
+
+export interface MatchesNeedingFeedbackResponse {
+  success: boolean;
+  data: {
+    matches: MatchNeedingFeedback[];
+    count: number;
+  };
+}
+
+// Legacy interface for backward compatibility
+export interface TournamentNeedingFeedback {
+  tournament: {
+    _id: string;
+    name: string;
+    startDate: string;
+    endDate: string;
+    location: string;
+  };
+  team: {
+    _id: string;
+    teamName: string;
+  };
+  matchesNeedingFeedback: Array<{
+    matchId: string;
+    opponentTeam: {
+      _id: string;
+      teamName: string;
+    } | null;
+    spiritScoreSubmitted: boolean;
+    playerFeedbackSubmitted: boolean;
+    matchNumber?: number;
+    roundName?: string;
+  }>;
+  totalMatches: number;
+  completedMatches: number;
+}
+
+export interface TournamentNeedingFeedbackResponse {
+  success: boolean;
+  data: {
+    tournaments: TournamentNeedingFeedback[];
+    count: number;
+  };
+}
+
+export interface MatchFeedbackDetail {
+  matchId: string;
+  opponentTeam: {
+    _id: string;
+    teamName: string;
+  } | null;
+  matchNumber?: number;
+  roundName?: string;
+  startTime: string;
+  spiritScore: {
+    categories: {
+      rulesKnowledge: number;
+      foulsContact: number;
+      fairMindedness: number;
+      positiveAttitude: number;
+      communication: number;
+    };
+    comments: string;
+    submittedAt: string;
+  } | null;
+  players: Array<{
+    playerId: string;
+    playerName: string;
+    feedback: {
+      score: string;
+      feedback: string;
+      submittedAt: string;
+    } | null;
+  }>;
+  spiritScoreSubmitted: boolean;
+  allPlayerFeedbackSubmitted: boolean;
+}
+
+export interface TournamentFeedbackDetailsResponse {
+  success: boolean;
+  data: {
+    tournament: {
+      _id: string;
+      name: string;
+      startDate: string;
+      endDate: string;
+      location: string;
+    };
+    team: {
+      _id: string;
+      teamName: string;
+    };
+    matches: MatchFeedbackDetail[];
+  };
+}
+
+export interface PlayerForFeedback {
+  playerId: string;
+  firstName: string;
+  lastName: string;
+  name: string;
+  email: string;
+  feedbackSubmitted: boolean;
+  feedback: {
+    score: string;
+    feedback: string;
+  } | null;
+}
+
+export interface MatchPlayersForFeedbackResponse {
+  success: boolean;
+  data: {
+    match: {
+      _id: string;
+      matchNumber?: number;
+      roundName?: string;
+    };
+    team: {
+      _id: string;
+      teamName: string;
+    };
+    players: PlayerForFeedback[];
+  };
+}
+
+export interface FeedbackCompletionStatusResponse {
+  success: boolean;
+  data: {
+    canRegister: boolean;
+    incompleteMatches: Array<{
+      matchId: string;
+      tournamentName: string;
+      matchDate: string;
+      teamName: string;
+      opponentTeam: string;
+      missingType: 'spirit_score' | 'player_feedback';
+    }>;
+  };
+}
+
+// Feedback API functions
+export const feedbackAPI = {
+  // Get matches needing feedback (after each match completion)
+  getMatchesNeedingFeedback: async (coachId: string): Promise<MatchesNeedingFeedbackResponse> => {
+    const response = await api.get('/feedback/matches/needing-feedback', {
+      params: { coachId }
+    });
+    return response.data;
+  },
+
+  // Get tournaments needing feedback (backward compatibility)
+  getTournamentsNeedingFeedback: async (coachId: string): Promise<TournamentNeedingFeedbackResponse> => {
+    const response = await api.get('/feedback/tournaments/needing-feedback', {
+      params: { coachId }
+    });
+    return response.data;
+  },
+
+  // Get tournament feedback details
+  getTournamentFeedbackDetails: async (
+    tournamentId: string,
+    coachId: string
+  ): Promise<TournamentFeedbackDetailsResponse> => {
+    const response = await api.get(`/feedback/tournaments/${tournamentId}/details`, {
+      params: { coachId }
+    });
+    return response.data;
+  },
+
+  // Submit spirit score for a match
+  submitSpiritScore: async (
+    matchId: string,
+    data: {
+      categories: {
+        rulesKnowledge: number;
+        foulsContact: number;
+        fairMindedness: number;
+        positiveAttitude: number;
+        communication: number;
+      };
+      comments?: string;
+      coachId: string;
+    }
+  ): Promise<{ success: boolean; message: string; data: { spiritScore: any } }> => {
+    const response = await api.post(`/feedback/matches/${matchId}/spirit-score`, data);
+    return response.data;
+  },
+
+  // Submit player feedback for a match
+  submitPlayerFeedback: async (
+    matchId: string,
+    playerId: string,
+    data: {
+      score: string;
+      feedback: string;
+      coachId: string;
+    }
+  ): Promise<{ success: boolean; message: string; data: { feedback: any } }> => {
+    const response = await api.post(`/feedback/matches/${matchId}/players/${playerId}/feedback`, data);
+    return response.data;
+  },
+
+  // Get players for a match who need feedback
+  getMatchPlayersForFeedback: async (
+    matchId: string,
+    coachId: string
+  ): Promise<MatchPlayersForFeedbackResponse> => {
+    const response = await api.get(`/feedback/matches/${matchId}/players`, {
+      params: { coachId }
+    });
+    return response.data;
+  },
+
+  // Check feedback completion status
+  checkFeedbackCompletionStatus: async (coachId: string): Promise<FeedbackCompletionStatusResponse> => {
+    const response = await api.get('/feedback/check-completion', {
+      params: { coachId }
+    });
+    return response.data;
+  },
+  // Get spirit scores (given and received) for coach's teams
+  getCoachSpiritScores: async (
+    coachId: string,
+    params?: { tournamentId?: string; matchId?: string }
+  ): Promise<{ success: boolean; data: { scores: Array<{
+    type: 'given' | 'received';
+    matchId: string;
+    match?: any;
+    opponentTeam?: { _id: string; teamName: string } | null;
+    categories: { rulesKnowledge: number; foulsContact: number; fairMindedness: number; positiveAttitude: number; communication: number };
+    total: number;
+    comments: string;
+    submittedAt: string;
+  }>; count: number } }> => {
+    const response = await api.get('/feedback/coach/spirit-scores', {
+      params: { coachId, ...params }
+    });
+    return response.data;
+  },
+
+  // Get spirit leaderboard for a tournament
+  getTournamentSpiritLeaderboard: async (
+    tournamentId: string
+  ): Promise<{ success: boolean; data: { leaderboard: Array<{
+    teamId: string;
+    teamName: string;
+    averageTotal: number; // 0–20
+    categoryAverages: { rulesKnowledge: number; foulsContact: number; fairMindedness: number; positiveAttitude: number; communication: number };
+    submissionCount: number;
+  }>; count: number } }> => {
+    const response = await api.get(`/feedback/tournaments/${tournamentId}/spirit-leaderboard`);
+    return response.data;
+  },
+};
+
+// Analytics interfaces
+export interface TournamentSummaryResponse {
+  success: boolean;
+  data: {
+    tournament?: {
+      _id: string;
+      name: string;
+      startDate: string;
+      endDate: string;
+      location: string;
+      division: string;
+      format: string;
+      status: string;
+    };
+    summary?: {
+      totalTeams: number;
+      totalMatches: number;
+      completedMatches: number;
+      scheduledMatches: number;
+      ongoingMatches: number;
+      totalPointsScored: number;
+      averagePointsPerMatch: number;
+    };
+    teams?: Array<{
+      teamId: string;
+      teamName: string;
+      totalMembers: number;
+      coach: any;
+      matchesPlayed: number;
+      wins: number;
+      losses: number;
+      draws: number;
+      totalPointsFor: number;
+      totalPointsAgainst: number;
+    }>;
+    spiritRankings?: Array<{
+      teamId: string;
+      teamName: string;
+      averageScore: number;
+      categoryAverages: {
+        rulesKnowledge: number;
+        foulsContact: number;
+        fairMindedness: number;
+        positiveAttitude: number;
+        communication: number;
+      };
+      submissionCount: number;
+    }>;
+    matches?: Array<{
+      _id: string;
+      teamA: string;
+      teamB: string;
+      score: { teamA: number; teamB: number };
+      status: string;
+      startTime: string;
+      winner: string;
+    }>;
+    summaries?: Array<{
+      tournament: {
+        _id: string;
+        name: string;
+        startDate: string;
+        endDate: string;
+        location: string;
+        status: string;
+      };
+      totalTeams: number;
+      totalMatches: number;
+      completedMatches: number;
+    }>;
+    count?: number;
+  };
+}
+
+export interface PlayerParticipationResponse {
+  success: boolean;
+  data: {
+    genderDistribution: Record<string, number>;
+    ageStats: {
+      youngest: number;
+      oldest: number;
+      average: number;
+      median: number;
+    };
+    participationStats: {
+      totalPlayers: number;
+      playersWithMatches: number;
+      totalMatchesPlayed: number;
+      averageMatchesPerPlayer: number;
+      playersInTournaments: number;
+    };
+    attendanceStats?: {
+      totalMatchAttendanceRecords: number;
+      presentCount: number;
+      absentCount: number;
+      lateCount: number;
+      attendanceRate: number;
+    };
+    playersByTeam: Record<string, number>;
+    totalPlayers: number;
+    playerProfiles: Array<{
+      _id: string;
+      name: string;
+      age: number | null;
+      gender: string | null;
+      team: string | null;
+      totalMatchesPlayed: number;
+      tournamentsPlayed: number;
+    }>;
+  };
+}
+
+// Admin Overview interfaces
+export interface AdminOverviewStats {
+  totalPlayers: { value: string; change: string };
+  activeTournaments: { value: string; change: string };
+  teamsRegistered: { value: string; change: string };
+  avgSpiritScore: { value: string; change: string };
+  sessionsThisMonth: { value: string; change: string };
+  attendanceRate: { value: string; change: string };
+}
+
+export interface AdminOverviewPendingActions {
+  accountRequests: number;
+  volunteerApplications: number;
+  tournamentApprovals: number;
+}
+
+export interface AdminOverviewQuickStats {
+  activeUsers: number;
+  sessionsBooked: string;
+  sessionsBookedPercentage: number;
+  tournamentCapacity: string;
+  tournamentCapacityPercentage: number;
+}
+
+export interface AdminOverviewResponse {
+  success: boolean;
+  data: {
+    stats: AdminOverviewStats;
+    pendingActions: AdminOverviewPendingActions;
+    quickStats: AdminOverviewQuickStats;
+  };
+}
+
+// Coach Overview interfaces
+export interface CoachOverviewStats {
+  activeStudents: { value: string; change: string };
+  sessionsThisWeek: { value: string; change: string };
+  attendanceRate: { value: string; change: string };
+  avgProgressScore: { value: string; change: string };
+}
+
+export interface CoachOverviewResponse {
+  success: boolean;
+  data: {
+    stats: CoachOverviewStats;
+  };
+}
+
+// Volunteer Overview interfaces
+export interface VolunteerOverviewStats {
+  upcomingEvents: { value: string; change: string };
+  hoursContributed: { value: string; change: string };
+  studentsImpacted: { value: string; change: string };
+  eventsSupported: { value: string; change: string };
+}
+
+export interface VolunteerOverviewResponse {
+  success: boolean;
+  data: {
+    stats: VolunteerOverviewStats;
+  };
+}
+
+// Analytics API functions
+// Notification interfaces
+export interface Notification {
+  _id: string;
+  type: string;
+  title: string;
+  message: string;
+  read: boolean;
+  readAt?: string;
+  relatedEntityId?: string;
+  relatedEntityType?: string;
+  createdAt: string;
+  time: string;
+}
+
+export interface NotificationResponse {
+  success: boolean;
+  data: {
+    notifications: Notification[];
+    unreadCount: number;
+    total: number;
+  };
+}
+
+export interface UnreadCountResponse {
+  success: boolean;
+  data: {
+    unreadCount: number;
+  };
+}
+
+// Notification API functions
+export const notificationAPI = {
+  // Get all notifications for current user
+  getNotifications: async (limit = 50, offset = 0): Promise<NotificationResponse> => {
+    const response = await api.get('/notifications', {
+      params: { limit, offset }
+    });
+    return response.data;
+  },
+
+  // Get unread count
+  getUnreadCount: async (): Promise<UnreadCountResponse> => {
+    const response = await api.get('/notifications/unread-count');
+    return response.data;
+  },
+
+  // Mark notification as read
+  markAsRead: async (notificationId: string): Promise<{ success: boolean; message: string }> => {
+    const response = await api.put(`/notifications/${notificationId}/read`);
+    return response.data;
+  },
+
+  // Mark all notifications as read
+  markAllAsRead: async (): Promise<{ success: boolean; message: string }> => {
+    const response = await api.put('/notifications/read-all');
+    return response.data;
+  },
+
+  // Delete notification
+  deleteNotification: async (notificationId: string): Promise<{ success: boolean; message: string }> => {
+    const response = await api.delete(`/notifications/${notificationId}`);
+    return response.data;
+  },
+};
+
+export const analyticsAPI = {
+  // Get tournament summary
+  getTournamentSummary: async (tournamentId?: string): Promise<TournamentSummaryResponse> => {
+    const url = tournamentId 
+      ? `/analytics/tournament-summary/${tournamentId}`
+      : '/analytics/tournament-summary';
+    const response = await api.get(url);
+    return response.data;
+  },
+
+  // Get player participation data
+  getPlayerParticipationData: async (tournamentId?: string): Promise<PlayerParticipationResponse> => {
+    const response = await api.get('/analytics/player-participation', {
+      params: tournamentId ? { tournamentId } : {}
+    });
+    return response.data;
+  },
+
+  // Get admin overview
+  getAdminOverview: async (): Promise<AdminOverviewResponse> => {
+    const response = await api.get('/analytics/admin-overview');
+    return response.data;
+  },
+
+  // Get coach overview
+  getCoachOverview: async (): Promise<CoachOverviewResponse> => {
+    const response = await api.get('/analytics/coach-overview');
+    return response.data;
+  },
+
+  // Get volunteer overview
+  getVolunteerOverview: async (): Promise<VolunteerOverviewResponse> => {
+    const response = await api.get('/analytics/volunteer-overview');
+    return response.data;
+  },
+
+  // Download tournament report
+  downloadTournamentReport: async (tournamentId: string, reportType: 'attendance' | 'matches' | 'scoring' | 'full') => {
+    const token = localStorage.getItem('token');
+    const response = await fetch(`${API_BASE_URL}/analytics/report/${tournamentId}/${reportType}`, {
+      headers: {
+        'Authorization': `Bearer ${token}`
+      }
+    });
+
+    if (!response.ok) {
+      throw new Error('Failed to download report');
+    }
+
+    const blob = await response.blob();
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `tournament-${tournamentId}-${reportType}-${Date.now()}.csv`;
+    document.body.appendChild(a);
+    a.click();
+    window.URL.revokeObjectURL(url);
+    document.body.removeChild(a);
+  },
+};
+
 // Utility function to handle API errors
 export const handleAPIError = (error: any): string => {
   if (error.response?.data?.message) {
@@ -754,3 +1553,112 @@ export const handleAPIError = (error: any): string => {
 };
 
 export default api;
+ 
+// Player Stats interfaces and API
+export interface PlayerRatings {
+  overall: number;
+  offense?: number;
+  defense?: number;
+  spirit?: number;
+  throws?: number;
+  cuts?: number;
+}
+
+export interface PlayerMatchStatItem {
+  _id: string;
+  matchId: { _id: string; startTime?: string; status?: string } | string;
+  tournamentId: { _id: string; name: string; startDate: string; endDate: string; location: string } | string;
+  teamId: { _id: string; teamName: string } | string;
+  playerId: { _id: string; firstName: string; lastName: string; email: string } | string;
+  ratings: PlayerRatings;
+  points?: number;
+  assists?: number;
+  blocks?: number;
+  remark?: string;
+  createdAt: string;
+}
+
+export const playerStatsAPI = {
+  // Volunteer submits stats for a completed match
+  submitMatchPlayerStats: async (
+    matchId: string,
+    data: {
+      volunteerId: string;
+      stats: Array<{ playerId: string; teamId: string; ratings: PlayerRatings; remark?: string }>;
+    }
+  ): Promise<{ success: boolean; message: string }> => {
+    const response = await api.post(`/player-stats/matches/${matchId}/stats`, data);
+    return response.data;
+  },
+
+  // Volunteer submits stats for a specific team in a completed match
+  submitTeamMatchPlayerStats: async (
+    matchId: string,
+    teamId: string,
+    data: {
+      volunteerId: string;
+      stats: Array<{ playerId: string; ratings: PlayerRatings; remark?: string; points?: number; assists?: number; blocks?: number }>;
+    }
+  ): Promise<{ success: boolean; message: string }> => {
+    const response = await api.post(`/player-stats/matches/${matchId}/teams/${teamId}/stats`, data);
+    return response.data;
+  },
+
+  // Coach views team stats for a match
+  getTeamMatchPlayerStats: async (
+    matchId: string,
+    teamId: string
+  ): Promise<{ success: boolean; data: { stats: PlayerMatchStatItem[] } }> => {
+    const response = await api.get(`/player-stats/matches/${matchId}/teams/${teamId}/stats`);
+    return response.data;
+  },
+
+  // Player views their stats (optionally by tournament)
+  getPlayerStats: async (
+    playerId: string,
+    tournamentId?: string
+  ): Promise<{ success: boolean; data: { stats: PlayerMatchStatItem[] } }> => {
+    const response = await api.get(`/player-stats/players/${playerId}/stats`, {
+      params: tournamentId ? { tournamentId } : {},
+    });
+    return response.data;
+  },
+};
+// AI Assistant API (merged)
+export const aiAPI = {
+  coachAssistant: async (payload: {
+    question: string;
+    context?: {
+      teamName?: string;
+      sessionGoals?: string[];
+      roster?: any[];
+      recentStats?: any;
+      language?: string;
+    };
+  }): Promise<{ success: boolean; data: { answer: string } }> => {
+    const response = await api.post('/ai/coach-assistant', payload, { timeout: 30000 });
+    return response.data;
+  },
+  
+  playerAssistant: async (payload: {
+    question: string;
+    context?: {
+      playerStats?: any;
+      recentMatches?: any[];
+      language?: string;
+      performanceGoals?: string[];
+      currentChallenges?: string[];
+    };
+  }): Promise<{ success: boolean; data: { answer: string } }> => {
+    try {
+      // Try the test endpoint first for development
+      const response = await api.post('/ai/test-assistant', payload, { timeout: 30000 });
+      return response.data;
+    } catch (error: any) {
+      console.error('Test assistant failed, trying regular endpoint:', error);
+      // Fallback to regular endpoint
+      const response = await api.post('/ai/player-assistant', payload, { timeout: 30000 });
+      return response.data;
+    }
+  },
+};

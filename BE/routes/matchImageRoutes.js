@@ -25,16 +25,8 @@ if (!fs.existsSync(uploadsDir)) {
   console.log("✅ Created uploads/matches directory:", uploadsDir);
 }
 
-// Multer setup for match images
-const storage = multer.diskStorage({
-  destination: (req, file, cb) => {
-    cb(null, uploadsDir);
-  },
-  filename: (req, file, cb) => {
-    const ext = path.extname(file.originalname);
-    cb(null, `${Date.now()}-match-${file.fieldname}${ext}`);
-  },
-});
+// Multer setup for match images (switch to memory storage for Cloudinary)
+const storage = multer.memoryStorage();
 
 const fileFilter = (req, file, cb) => {
   if (file.mimetype.startsWith("image/")) {
