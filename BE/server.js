@@ -45,8 +45,10 @@ const app = express();
 
 // Middleware
 app.use(express.json());
-app.use(cors());
-
+app.use(cors({
+  origin: process.env.FRONTEND_URL || "*",
+  credentials: true
+}));
 // Translation middleware - must be before routes to intercept all responses
 app.use("/api", translationMiddleware);
 
@@ -79,7 +81,7 @@ app.use("/uploads", express.static(path.join(__dirname, "uploads")));
 
 // Root route (for testing)
 app.get("/", (req, res) => {
-  res.send("✅ TAMUI Backend API Running");
+  res.send("✅Backend API Running");
 });
 
 // Global error handler
