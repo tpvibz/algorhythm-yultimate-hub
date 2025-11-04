@@ -155,7 +155,7 @@ const AboutUs = () => {
                   </ul>
                 </CardContent>
               </Card>
-
+{/* heyy wassup */}
               <Card className="glass-card border-white/10">
                 <CardContent className="p-8 space-y-6">
                   <div className="w-16 h-16 bg-gradient-to-br from-primary to-secondary rounded-2xl flex items-center justify-center">
