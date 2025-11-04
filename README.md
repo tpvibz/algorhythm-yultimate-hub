@@ -24,10 +24,27 @@ Empowering children from under-resourced communities by teaching life skills lik
 
 ### 📸 Demo & Screenshots
 
-> � **Live Demo:** [Add your demo link here]
+> 🔗 **Live Demo:** [https://algorhythm-yultimate-hub.vercel.app/](https://algorhythm-yultimate-hub.vercel.app/)
 
-```
-[Add screenshots/videos here when available]
+#### 🧪 Test Credentials
+All test accounts use password: **123456**
+
+**Admin:**
+- Username: `admin123`
+
+**Coaches:**
+- `COA-001`
+- `COA-002`
+
+**Players:**
+- `PLA-1762279146255`
+- `PLA-1762275683011`
+- `PLA-1762275671666`
+
+**Volunteers:**
+- `VOL-1762276422711`
+- `VOL-1762276417644`
+
 ```
 
 ---
