@@ -17,7 +17,7 @@
 
 ## 📖 Project Overview
 
-YUltimate Hub transforms how Ultimate Frisbee tournaments and coaching programs are managed. Moving beyond manual spreadsheets to a unified, intelligent, real-time digital ecosystem that empowers under-resourced communities through sport and technology.
+YUltimate Hub transforms how Ultimate Frisbee tournaments and coaching programs are managed. Moving beyond manual spreadsheets to a unified, intelligent, real-time digital ecosystem that empowers under-resourced communities through sports and technology.
 
 ### 🎯 Mission
 Empowering children from under-resourced communities by teaching life skills like teamwork, fairness, and respect through Ultimate Frisbee, powered by cutting-edge Artificial Intelligence technology.
