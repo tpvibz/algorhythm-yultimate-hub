@@ -3,7 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, Heart, Users, Trophy, Camera, Star, Trophy as TrophyIcon, TrendingUp, Image as ImageIcon, UserCheck } from "lucide-react";
 import { toast } from "sonner";
 import Navbar from "@/components/Navbar";
-import BottomNav from "@/components/BottomNav";
+
 import VolunteerNavbar from "@/components/VolunteerNavbar";
 import VolunteerNotifications from "@/components/VolunteerNotifications";
 import AssignedTournamentsTab from "./VolunteerDashboard/AssignedTournamentsTab";
@@ -60,7 +60,7 @@ const VolunteerDashboard = () => {
       <div className="pt-20 px-4 pb-32">
         <div className="container mx-auto">
           {/* Header */}
-          <div className="mb-8 space-y-2 animate-slide-up">
+          <div className="mb-8 space-y-2 mt-10 animate-slide-up">
             <div className="flex items-center gap-3">
               <div className="bg-gradient-to-br from-green-500 to-green-600 p-3 rounded-xl">
                 <Heart className="h-6 w-6 text-white" />
@@ -250,7 +250,7 @@ const VolunteerDashboard = () => {
           )}
         </div>
       </div>
-      <BottomNav />
+      
     </div>
   );
 };

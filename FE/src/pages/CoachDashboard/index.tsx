@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Users, Calendar, BookOpen, BarChart3, GraduationCap, ClipboardCheck, MessageSquare, TrendingUp, HeartHandshake, Trophy, Sparkles } from "lucide-react";
 import CoachNavbar from "@/components/CoachNavbar";
-import BottomNav from "@/components/BottomNav";
+
 import CoachNotifications from "@/components/CoachNotifications";
 import CoachTeams from "@/components/CoachTeams";
 import OverviewTab from "./OverviewTab";
@@ -50,7 +50,7 @@ const CoachDashboard = () => {
       <div className="pt-20 px-4 pb-32">
         <div className="container mx-auto">
           {/* Header */}
-          <div className="mb-8 space-y-2 animate-slide-up">
+          <div className="mb-8 space-y-2 mt-10 animate-slide-up">
             <div className="flex items-center gap-3">
               <div className="bg-gradient-to-br from-orange-500 to-orange-600 p-3 rounded-xl">
                 <Users className="h-6 w-6 text-white" />
@@ -151,7 +151,7 @@ const CoachDashboard = () => {
         </div>
       </div>
 
-      <BottomNav />
+     
     </div>
   );
 };
