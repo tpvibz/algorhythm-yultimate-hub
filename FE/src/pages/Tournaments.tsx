@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Calendar, MapPin, Users, Trophy, Clock, ChevronRight, Loader2, AlertCircle } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import BottomNav from "@/components/BottomNav";
 import { tournamentAPI, Tournament, handleAPIError, API_BASE_URL } from "@/services/api";
+import api from "@/services/api";
 import { toast } from "sonner";
 
 // Format date range for display
@@ -73,7 +74,7 @@ const TournamentCard = ({ tournament }: { tournament: Tournament }) => {
       {tournament.image && (
         <div className="mb-4 rounded-lg overflow-hidden">
           <img 
-            src={`${API_BASE_URL.replace("/api", "")}${tournament.image}`} 
+            src={tournament.image.startsWith("http") ? tournament.image : `${fileBaseUrl}${tournament.image}`} 
             alt={tournament.name}
             className="w-full h-32 object-cover"
           />
@@ -150,6 +151,19 @@ const Tournaments = () => {
   const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+
+  // Build absolute URLs for files returned as relative paths (e.g., /uploads/..)
+  const fileBaseUrl = useMemo(() => {
+    try {
+      const base = (api as any)?.defaults?.baseURL as string | undefined;
+      if (!base) return "";
+      const url = new URL(base);
+      // api base is http://host:port/api → strip trailing /api
+      return `${url.origin}`;
+    } catch {
+      return "";
+    }
+  }, []);
 
   // Fetch tournaments on component mount
   useEffect(() => {
