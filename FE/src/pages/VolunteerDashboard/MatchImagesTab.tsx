@@ -353,7 +353,10 @@ const MatchImagesTab = () => {
                   <Card key={image._id} className="glass-card overflow-hidden">
                     <div className="relative">
                       <img
-                        src={`${API_BASE_URL.replace("/api", "")}${image.imageUrl}`}
+                        src={image.imageUrl ? 
+                          (image.imageUrl.startsWith("http") ? image.imageUrl : `${API_BASE_URL.replace("/api", "")}${image.imageUrl}`) :
+                          "https://images.unsplash.com/photo-1461896836934-ffe607ba8211?w=600&h=400&fit=crop&q=80"
+                        }
                         alt={image.caption || "Match image"}
                         className="w-full h-48 object-cover"
                       />

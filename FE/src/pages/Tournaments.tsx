@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Calendar, MapPin, Users, Trophy, Clock, ChevronRight, Loader2, AlertCircle } from "lucide-react";
+import { Calendar, MapPin, Users, Trophy, Clock, ChevronRight, Loader2, AlertCircle, Image as ImageIcon } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import BottomNav from "@/components/BottomNav";
 import { tournamentAPI, Tournament, handleAPIError, API_BASE_URL } from "@/services/api";
@@ -51,7 +51,7 @@ const isRegistrationOpen = (startDate: string, registrationDeadline: string) => 
   return now < regDeadline && now < start;
 };
 
-const TournamentCard = ({ tournament }: { tournament: Tournament }) => {
+const TournamentCard = ({ tournament, fileBaseUrl }: { tournament: Tournament; fileBaseUrl: string }) => {
   const status = getTournamentStatus(tournament.startDate, tournament.endDate, tournament.registrationDeadline);
   const isLive = status === 'live';
   const registrationOpen = isRegistrationOpen(tournament.startDate, tournament.registrationDeadline);
@@ -71,15 +71,22 @@ const TournamentCard = ({ tournament }: { tournament: Tournament }) => {
         </span>
       </div>
 
-      {tournament.image && (
-        <div className="mb-4 rounded-lg overflow-hidden">
+      <div className="mb-4 rounded-lg overflow-hidden">
+        {tournament.image ? (
           <img 
-            src={tournament.image.startsWith("http") ? tournament.image : `${fileBaseUrl}${tournament.image}`} 
+            src={tournament.image.startsWith("http") ? tournament.image : `${fileBaseUrl}${tournament.image}`}
             alt={tournament.name}
             className="w-full h-32 object-cover"
           />
-        </div>
-      )}
+        ) : (
+          <div className="w-full h-32 bg-muted flex items-center justify-center">
+            <div className="text-center text-muted-foreground">
+              <ImageIcon className="h-8 w-8 mx-auto mb-1 opacity-50" />
+              <p className="text-xs">No Image</p>
+            </div>
+          </div>
+        )}
+      </div>
 
       {tournament.description && (
         <p className="text-sm text-muted-foreground mb-4 line-clamp-2">
@@ -320,7 +327,7 @@ const Tournaments = () => {
         ) : (
           <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
             {filteredTournaments.map((tournament) => (
-              <TournamentCard key={tournament._id} tournament={tournament} />
+              <TournamentCard key={tournament._id} tournament={tournament} fileBaseUrl={fileBaseUrl} />
             ))}
           </div>
         )}
