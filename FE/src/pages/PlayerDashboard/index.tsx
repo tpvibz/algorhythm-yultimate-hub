@@ -4,7 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Trophy } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import PlayerNotifications from "@/components/PlayerNotifications";
-import BottomNav from "@/components/BottomNav";
+
 import { toast } from "sonner";
 import { Skeleton } from "@/components/ui/skeleton";
 import PlayerProfileSection from "./PlayerProfileSection";
@@ -14,6 +14,7 @@ import HomeVisitsSection from "./HomeVisitsSection";
 import AchievementsSection from "./AchievementsSection";
 import TransferSection from "./TransferSection";
 import MatchesSection from "./MatchesSection";
+import { API_BASE_URL } from "@/services/api";
 import StatsCards from "./StatsCards";
 import FeedbackSection from "./FeedbackSection";
 import PlayerFloatingChat from "./PlayerFloatingChat";
@@ -42,8 +43,8 @@ const PlayerDashboard = () => {
     try {
       setLoading(true);
       const [profileRes, statsRes, playerStatsRes] = await Promise.all([
-        fetch(`http://localhost:9000/api/player/${id}`),
-        fetch(`http://localhost:9000/api/player/${id}/stats`),
+        fetch(`${API_BASE_URL}/player/${id}`),
+        fetch(`${API_BASE_URL}/player/${id}/stats`),
         playerStatsAPI.getPlayerStats(id)
       ]);
 
@@ -84,7 +85,7 @@ const PlayerDashboard = () => {
             </div>
           </div>
         </div>
-        <BottomNav />
+    
       </div>
     );
   }
@@ -100,7 +101,7 @@ const PlayerDashboard = () => {
             </Card>
           </div>
         </div>
-        <BottomNav />
+       
       </div>
     );
   }
@@ -115,7 +116,7 @@ const PlayerDashboard = () => {
       <div className="pt-20 px-4 pb-32">
         <div className="container mx-auto">
           {/* Header */}
-          <div className="mb-8 space-y-2 animate-slide-up">
+          <div className="mb-8 space-y-2 mt-10 animate-slide-up">
             <div className="flex items-center gap-3">
               <div className="bg-gradient-to-br from-purple-500 to-purple-600 p-3 rounded-xl">
                 <Trophy className="h-6 w-6 text-white" />
@@ -181,7 +182,7 @@ const PlayerDashboard = () => {
           </Tabs>
         </div>
       </div>
-<BottomNav />
+
 
 {/* AI Performance Coach (Floating) */}
 <PlayerFloatingChat

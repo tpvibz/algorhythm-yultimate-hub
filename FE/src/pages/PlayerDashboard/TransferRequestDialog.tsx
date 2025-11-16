@@ -5,6 +5,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
+import { API_BASE_URL } from "@/services/api";
 
 interface TransferRequestDialogProps {
   open: boolean;
@@ -34,8 +35,8 @@ const TransferRequestDialog = ({ open, onOpenChange, player, onSuccess }: Transf
     try {
       setLoadingInstitutions(true);
       const [schoolsRes, communitiesRes] = await Promise.all([
-        fetch("http://localhost:9000/api/institutions/schools"),
-        fetch("http://localhost:9000/api/institutions/communities"),
+        fetch(`${API_BASE_URL}/institutions/schools`),
+        fetch(`${API_BASE_URL}/institutions/communities`),
       ]);
 
       if (schoolsRes.ok) {
@@ -70,7 +71,7 @@ const TransferRequestDialog = ({ open, onOpenChange, player, onSuccess }: Transf
     setLoading(true);
     try {
       const response = await fetch(
-        `http://localhost:9000/api/player/${player._id}/transfer-request`,
+        `${API_BASE_URL}/player/${player._id}/transfer-request`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

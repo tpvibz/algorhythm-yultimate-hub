@@ -46,7 +46,11 @@ const app = express();
 // Middleware
 app.use(express.json());
 app.use(cors({
-  origin: process.env.FRONTEND_URL || "*",
+  origin: [
+    "http://localhost:8080",
+    "https://algorhythm-yultimate-hub.vercel.app",
+    process.env.FRONTEND_URL
+  ].filter(Boolean),
   credentials: true
 }));
 // Translation middleware - must be before routes to intercept all responses

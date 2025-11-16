@@ -7,6 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Zap } from "lucide-react";
 import { toast } from "sonner";
+import { API_BASE_URL } from "@/services/api";
 
 const Register = () => {
   const navigate = useNavigate();
@@ -39,8 +40,8 @@ const Register = () => {
     try {
       setLoadingInstitutions(true);
       const [schoolsRes, communitiesRes] = await Promise.all([
-        fetch("http://localhost:9000/api/institutions/schools"),
-        fetch("http://localhost:9000/api/institutions/communities"),
+        fetch(`${API_BASE_URL}/institutions/schools`),
+        fetch(`${API_BASE_URL}/institutions/communities`),
       ]);
 
       if (schoolsRes.ok) {
@@ -108,7 +109,7 @@ const Register = () => {
         requestBody.affiliationId = formData.affiliationId;
       }
 
-      const response = await fetch("http://localhost:9000/api/auth/signup/player", {
+      const response = await fetch(`${API_BASE_URL}/auth/signup/player`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(requestBody),
@@ -140,7 +141,7 @@ const Register = () => {
               <Zap className="h-8 w-8 text-primary-foreground" />
             </div>
           </div>
-          <CardTitle className="text-3xl font-bold">Join AlgoRhythm</CardTitle>
+          <CardTitle className="text-3xl font-bold">Join YUltimate</CardTitle>
           <CardDescription className="text-base">
             Create your account to get started
           </CardDescription>

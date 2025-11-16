@@ -4,6 +4,7 @@ import { Calendar, MapPin, Trophy } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { API_BASE_URL } from "@/services/api";
 
 interface MatchesSectionProps {
   playerId: string;
@@ -20,7 +21,7 @@ const MatchesSection = ({ playerId }: MatchesSectionProps) => {
   const fetchMatches = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:9000/api/player/${playerId}/matches`);
+      const response = await fetch(`${API_BASE_URL}/player/${playerId}/matches`);
       if (response.ok) {
         const data = await response.json();
         setMatches(data);

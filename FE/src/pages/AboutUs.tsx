@@ -17,7 +17,7 @@ const AboutUs = () => {
             <h1 className="text-5xl md:text-7xl font-bold leading-tight">
               About{" "}
               <span className="bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
-                AlgoRhythm
+                YUltimate
               </span>
             </h1>
             <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto">
@@ -39,7 +39,7 @@ const AboutUs = () => {
             
             <div className="space-y-6 text-lg text-muted-foreground leading-relaxed">
               <p>
-                AlgoRhythm was born from a simple belief: that sport has the power to transform lives, 
+                YUltimate was born from a simple belief: that sport has the power to transform lives, 
                 build character, and create lasting positive change in communities. What started as a 
                 passion project to organize Ultimate Frisbee tournaments has evolved into a comprehensive 
                 platform serving youth development programs across regions.
@@ -50,7 +50,7 @@ const AboutUs = () => {
                 tools weren't built for the dynamic, spirit-driven nature of Ultimate Frisbee and youth sports.
               </p>
               <p>
-                Today, AlgoRhythm combines cutting-edge technology with grassroots sports culture, offering 
+                Today, YUltimate combines cutting-edge technology with grassroots sports culture, offering 
                 tournament organizers and youth program coordinators the tools they need to focus on what 
                 matters most: building communities and empowering young people.
               </p>
@@ -237,7 +237,7 @@ const AboutUs = () => {
             <div className="bg-gradient-to-br from-primary to-secondary p-2 rounded-lg">
               <Users className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="text-lg font-bold">AlgoRhythm</span>
+            <span className="text-lg font-bold">YUltimate</span>
           </div>
           <p className="text-muted-foreground">
             © 2025 Y-Ultimate. Empowering communities through sport.

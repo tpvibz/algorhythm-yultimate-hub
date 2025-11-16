@@ -41,7 +41,7 @@ const Login = () => {
           </div>
           <CardTitle className="text-3xl font-bold">Welcome Back</CardTitle>
           <CardDescription className="text-base">
-            Sign in to access your AlgoRhythm dashboard
+            Sign in to access your YUltimate dashboard
           </CardDescription>
         </CardHeader>
         <CardContent>

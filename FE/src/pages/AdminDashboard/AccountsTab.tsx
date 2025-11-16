@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, D
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Check, X, User, Award, MapPin } from "lucide-react";
-import { authAPI } from "@/services/api";
+import { authAPI, API_BASE_URL } from "@/services/api";
 import { toast } from "sonner";
 
 interface AccountsTabProps {
@@ -52,7 +52,7 @@ const AccountsTab = ({ accountRequests, handleApprove, handleReject }: AccountsT
     try {
       // Fetch coaches from institution
       const res = await fetch(
-        `http://localhost:9000/api/institutions/${affiliation.id}/coaches`
+        `${API_BASE_URL}/institutions/${affiliation.id}/coaches`
       );
       if (res.ok) {
         const institutionCoaches = await res.json();

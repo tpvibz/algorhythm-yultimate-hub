@@ -6,6 +6,7 @@ import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
+import { API_BASE_URL } from "@/services/api";
 
 interface AttendanceSectionProps {
   playerId: string;
@@ -22,7 +23,7 @@ const AttendanceSection = ({ playerId }: AttendanceSectionProps) => {
   const fetchAttendance = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:9000/api/player/${playerId}/attendance`);
+      const response = await fetch(`${API_BASE_URL}/player/${playerId}/attendance`);
       if (response.ok) {
         const data = await response.json();
         setAttendance(data);

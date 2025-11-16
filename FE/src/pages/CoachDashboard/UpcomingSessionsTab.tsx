@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, Users } from "lucide-react";
+import { API_BASE_URL } from "@/services/api";
 
 interface Session {
   _id: string;
@@ -40,7 +41,7 @@ const UpcomingSessionsTab = ({ onViewSessions }: UpcomingSessionsTabProps) => {
         return;
       }
 
-      const response = await fetch(`http://localhost:9000/api/sessions/coach/${coachId}`);
+      const response = await fetch(`${API_BASE_URL}/sessions/coach/${coachId}`);
       const data = await response.json();
       if (response.ok) {
         setSessions(data);

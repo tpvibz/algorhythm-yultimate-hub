@@ -76,7 +76,7 @@ const Navbar = () => {
               <div className="bg-primary p-2 rounded-lg group-hover:scale-110 transition-transform">
                 <Zap className="h-6 w-6 text-primary-foreground" />
               </div>
-              <span className="text-xl font-bold text-primary">AlgoRhythm</span>
+              <span className="text-xl font-bold text-primary">YUltimate</span>
             </Link>
 
             <button
@@ -97,7 +97,7 @@ const Navbar = () => {
                 <Translate>Home</Translate>
               </Link>
               <Link 
-                to="/about" 
+                to="/about-us" 
                 className="block py-2 text-foreground hover:text-primary transition-colors"
                 onClick={() => setIsOpen(false)}
               >

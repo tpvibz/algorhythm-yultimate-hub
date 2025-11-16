@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { CheckCircle, XCircle, Clock, Calendar, Users } from "lucide-react";
 import { toast } from "sonner";
+import { API_BASE_URL } from "@/services/api";
 
 interface Session {
   _id: string;
@@ -48,7 +49,7 @@ const AttendanceTab = () => {
   const fetchSessions = async (coachId: string) => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:9000/api/sessions/coach/${coachId}`);
+      const response = await fetch(`${API_BASE_URL}/sessions/coach/${coachId}`);
       const data = await response.json();
       if (response.ok) {
         const sessionsData = Array.isArray(data) ? data : [];
@@ -84,7 +85,7 @@ const AttendanceTab = () => {
       if (sessionIds.length === 0) return;
 
       const response = await fetch(
-        `http://localhost:9000/api/attendance/sessions?sessionIds=${sessionIds.join(",")}`
+        `${API_BASE_URL}/attendance/sessions?sessionIds=${sessionIds.join(",")}`
       );
       if (response.ok) {
         const data = await response.json();
@@ -148,7 +149,7 @@ const AttendanceTab = () => {
         date: new Date(session.scheduledStart),
       }));
 
-      const response = await fetch("http://localhost:9000/api/attendance/mark", {
+      const response = await fetch(`${API_BASE_URL}/attendance/mark`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

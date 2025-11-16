@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Loader2, X } from "lucide-react";
 import { toast } from "sonner";
+import { API_BASE_URL } from "@/services/api";
 
 interface HomeVisitFormProps {
   studentId: string;
@@ -40,7 +41,7 @@ const HomeVisitForm = ({ studentId, onClose, onSuccess }: HomeVisitFormProps) =>
       }
 
       const response = await fetch(
-        `http://localhost:9000/api/students/${studentId}/home-visits`,
+        `${API_BASE_URL}/students/${studentId}/home-visits`,
         {
           method: "POST",
           headers: { "Content-Type": "application/json" },

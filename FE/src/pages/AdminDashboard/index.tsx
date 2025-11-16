@@ -3,7 +3,7 @@ import {
   Trophy, BarChart3, Calendar, UserCheck, Users, FileText, CalendarDays, TrendingUp
 } from "lucide-react";
 import AdminNavbar from "@/components/AdminNavbar";
-import BottomNav from "@/components/BottomNav";
+
 import AdminNotifications from "@/components/AdminNotifications";
 import { toast } from "sonner";
 import OverviewTab from "./OverviewTab";
@@ -117,22 +117,23 @@ const AdminDashboard = () => {
       </div>
       
       <div className="pt-20 px-4 pb-32">
-        <div className="container mx-auto max-w-7xl">
+        <div className="container h-11 mx-auto max-w-7xl">
           {/* Header */}
-          <div className="mb-8 space-y-2 animate-slide-up">
-            <div className="flex items-center gap-3">
-              <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-3 rounded-xl">
-                <Trophy className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <h1 className="text-4xl font-bold">Admin Dashboard</h1>
-                <p className="text-muted-foreground text-lg">
-                  Tournament Director & System Administrator
-                </p>
-              </div>
-            </div>
-          </div>
-
+          <div className="pt-8">
+  <div className="mb-8 space-y-2 mt-10 animate-slide-up">
+    <div className="flex items-center gap-3">
+      <div className="bg-gradient-to-br from-blue-500 to-blue-600 p-3 rounded-xl">
+        <Trophy className="h-6 w-6 text-white" />
+      </div>
+      <div>
+        <h1 className="text-4xl font-bold">Admin Dashboard</h1>
+        <p className="text-muted-foreground text-lg">
+          Tournament Director & System Administrator
+        </p>
+      </div>
+    </div>
+  </div>
+</div>
           {/* Navigation Tabs */}
           <div className="flex flex-wrap gap-3 mb-8">
             <TabButton id="overview" label="Overview" icon={BarChart3} />
@@ -164,7 +165,7 @@ const AdminDashboard = () => {
           {activeTab === "reports" && <ReportsTab />}
         </div>
       </div>
-      <BottomNav />
+     
     </div>
   );
 };

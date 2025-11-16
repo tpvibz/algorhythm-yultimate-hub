@@ -61,8 +61,8 @@ const ContactUs = () => {
               {
                 icon: Mail,
                 title: "Email Us",
-                content: "support@algorhythm.com",
-                link: "mailto:support@algorhythm.com"
+                content: "support@yultimate.com",
+                link: "mailto:support@yultimate.com"
               },
               {
                 icon: Phone,
@@ -226,7 +226,7 @@ const ContactUs = () => {
                     <h3 className="text-2xl font-bold mb-4">Let's Talk</h3>
                     <p className="text-muted-foreground leading-relaxed mb-6">
                       Whether you're interested in organizing a tournament, starting a youth program, 
-                      or just want to learn more about AlgoRhythm, we're here to help.
+                      or just want to learn more about YUltimate, we're here to help.
                     </p>
                     <p className="text-muted-foreground leading-relaxed">
                       Our team is passionate about Ultimate Frisbee and youth development. 
@@ -316,7 +316,7 @@ const ContactUs = () => {
         <div className="container mx-auto text-center text-primary-foreground space-y-6">
           <h2 className="text-4xl md:text-5xl font-bold">Join Our Community</h2>
           <p className="text-xl opacity-90 max-w-2xl mx-auto">
-            Be part of something bigger. Start your journey with AlgoRhythm today.
+            Be part of something bigger. Start your journey with YUltimate today.
           </p>
           <div className="flex gap-4 justify-center pt-4">
             <Button size="lg" variant="secondary" className="text-lg px-8">
@@ -336,7 +336,7 @@ const ContactUs = () => {
             <div className="bg-gradient-to-br from-primary to-secondary p-2 rounded-lg">
               <Users className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="text-lg font-bold">AlgoRhythm</span>
+            <span className="text-lg font-bold">YUltimate</span>
           </div>
           <p className="text-muted-foreground">
             © 2025 Y-Ultimate. Empowering communities through sport.

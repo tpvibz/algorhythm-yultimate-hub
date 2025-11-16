@@ -3,6 +3,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, User, Award, Calendar } from "lucide-react";
 import { toast } from "sonner";
 import StudentDetailModal from "./StudentDetailModal";
+import { API_BASE_URL } from "@/services/api";
 
 interface Student {
   _id: string;
@@ -43,7 +44,7 @@ const StudentsTab = () => {
         return;
       }
 
-      const response = await fetch(`http://localhost:9000/api/students/coach/${coachId}`);
+      const response = await fetch(`${API_BASE_URL}/students/coach/${coachId}`);
       const data = await response.json();
       if (response.ok) {
         setStudents(Array.isArray(data) ? data : []);

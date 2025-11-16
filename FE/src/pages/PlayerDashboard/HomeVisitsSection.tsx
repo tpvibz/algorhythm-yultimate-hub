@@ -4,6 +4,7 @@ import { Home, Calendar, User, FileText } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { API_BASE_URL } from "@/services/api";
 
 interface HomeVisitsSectionProps {
   playerId: string;
@@ -20,7 +21,7 @@ const HomeVisitsSection = ({ playerId }: HomeVisitsSectionProps) => {
   const fetchHomeVisits = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:9000/api/player/${playerId}/home-visits`);
+      const response = await fetch(`${API_BASE_URL}/player/${playerId}/home-visits`);
       if (response.ok) {
         const data = await response.json();
         setHomeVisits(data);

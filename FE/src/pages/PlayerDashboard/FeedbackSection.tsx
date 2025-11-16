@@ -4,6 +4,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { MessageSquare, Calendar, Trophy, User, Star } from "lucide-react";
 import { toast } from "sonner";
+import { API_BASE_URL } from "@/services/api";
 
 interface Feedback {
   _id: string;
@@ -49,7 +50,7 @@ const FeedbackSection = ({ playerId }: FeedbackSectionProps) => {
   const loadFeedback = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:9000/api/player/${playerId}/feedback`);
+      const response = await fetch(`${API_BASE_URL}/player/${playerId}/feedback`);
       if (response.ok) {
         const data = await response.json();
         setFeedback(data.feedback || []);

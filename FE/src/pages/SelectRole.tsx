@@ -49,7 +49,7 @@ const SelectRole = () => {
                 <Zap className="h-12 w-12 text-primary-foreground" />
               </div>
             </div>
-            <h1 className="text-4xl md:text-5xl font-bold">Welcome to AlgoRhythm</h1>
+            <h1 className="text-4xl md:text-5xl font-bold">Welcome to YUltimate</h1>
             <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
               Select your role to continue to your personalized dashboard
             </p>

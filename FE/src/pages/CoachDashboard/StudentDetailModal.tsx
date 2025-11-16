@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from "@/components/ui/chart";
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, ResponsiveContainer } from "recharts";
 import HomeVisitForm from "./HomeVisitForm";
+import { API_BASE_URL } from "@/services/api";
 import HomeVisitHistory from "./HomeVisitHistory";
 
 interface StudentDetails {
@@ -84,7 +85,7 @@ const StudentDetailModal = ({ studentId, onClose }: StudentDetailModalProps) => 
   const fetchStudentDetails = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:9000/api/students/${studentId}/details`);
+      const response = await fetch(`${API_BASE_URL}/students/${studentId}/details`);
       const data = await response.json();
       if (response.ok) {
         setStudentDetails(data);

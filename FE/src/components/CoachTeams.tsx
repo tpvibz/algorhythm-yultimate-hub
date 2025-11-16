@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { API_BASE_URL } from "@/services/api";
 
 const CoachTeams = ({ open, onOpenChange }) => {
   const [teams, setTeams] = useState([]);
@@ -19,8 +20,8 @@ const CoachTeams = ({ open, onOpenChange }) => {
 
         // Prefer protected endpoint but allow coachId query as fallback
         const url = coachId
-          ? `http://localhost:9000/api/teams/mine?coachId=${encodeURIComponent(coachId)}`
-          : `http://localhost:9000/api/teams/mine`;
+          ? `${API_BASE_URL}/teams/mine?coachId=${encodeURIComponent(coachId)}`
+          : `${API_BASE_URL}/teams/mine`;
 
         const res = await fetch(url, {
           headers: token ? { Authorization: `Bearer ${token}` } : {},

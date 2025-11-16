@@ -4,7 +4,7 @@ import {
   Users, Trophy, Target, TrendingUp, Calendar, CheckCircle, AlertCircle
 } from "lucide-react";
 import { toast } from "sonner";
-import { Tournament, analyticsAPI, AdminOverviewResponse } from "@/services/api";
+import { Tournament, analyticsAPI, AdminOverviewResponse, API_BASE_URL } from "@/services/api";
 
 interface OverviewTabProps {
   setActiveTab: (tab: string) => void;
@@ -74,7 +74,7 @@ const OverviewTab = ({ setActiveTab, tournaments = [] }: OverviewTabProps) => {
 
   const fetchSessions = async () => {
     try {
-      const response = await fetch("http://localhost:9000/api/sessions");
+      const response = await fetch(`${API_BASE_URL}/sessions`);
       const data = await response.json();
       if (response.ok) {
         setSessions(data);
@@ -245,21 +245,22 @@ const OverviewTab = ({ setActiveTab, tournaments = [] }: OverviewTabProps) => {
       </div>
 
       {/* Upcoming Sessions Section */}
-      <Card className="glass-card glass-hover animate-slide-up">
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span className="flex items-center gap-2">
-              <Calendar className="h-5 w-5" />
-              Upcoming Sessions
-            </span>
-            <button 
-              onClick={() => setActiveTab("sessions")}
-              className="text-sm text-blue-600 hover:text-blue-700 font-medium"
-            >
-              View All
-            </button>
-          </CardTitle>
-        </CardHeader>
+      <div className="mt-8">
+        <Card className="glass-card glass-hover animate-slide-up">
+          <CardHeader>
+            <CardTitle className="flex items-center justify-between">
+              <span className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                Upcoming Sessions
+              </span>
+              <button 
+                onClick={() => setActiveTab("sessions")}
+                className="text-sm text-blue-600 hover:text-blue-700 font-medium"
+              >
+                View All
+              </button>
+            </CardTitle>
+          </CardHeader>
         <CardContent>
           {loading ? (
             <p className="text-sm text-muted-foreground">Loading sessions...</p>
@@ -318,6 +319,7 @@ const OverviewTab = ({ setActiveTab, tournaments = [] }: OverviewTabProps) => {
           )}
         </CardContent>
       </Card>
+      </div>
     </>
   );
 };

@@ -2,6 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Plus, X, Calendar } from "lucide-react";
 import { toast } from "sonner";
+import { API_BASE_URL } from "@/services/api";
 
 interface Coach {
   _id: string;
@@ -37,6 +38,7 @@ const SessionsTab = () => {
   const [coaches, setCoaches] = useState<Coach[]>([]);
   const [cohorts, setCohorts] = useState<Cohort[]>([]);
   const [loading, setLoading] = useState(true);
+  const [sessionError, setSessionError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
     title: "",
     type: "training" as "training" | "workshop",
@@ -48,48 +50,70 @@ const SessionsTab = () => {
   });
 
   useEffect(() => {
-    fetchSessions();
-    fetchCoaches();
-    fetchCohorts();
+    loadInitialData();
   }, []);
 
-  const fetchSessions = async () => {
+  const loadInitialData = async () => {
     try {
-      const response = await fetch("http://localhost:9000/api/sessions");
-      const data = await response.json();
-      if (response.ok) {
-        setSessions(data);
-      } else {
-        toast.error(data.message || "Failed to load sessions");
-      }
+      setLoading(true);
+      setSessionError(null);
+      await Promise.all([
+        fetchSessions(),
+        fetchCoaches(),
+        fetchCohorts(),
+      ]);
     } catch (error) {
-      toast.error("Server error while loading sessions");
+      console.error("Error loading initial data:", error);
+      setSessionError("Failed to load sessions data");
     } finally {
       setLoading(false);
     }
   };
 
+  const fetchSessions = async () => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/sessions`);
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || "Failed to load sessions");
+      }
+      const data = await response.json();
+      setSessions(data);
+      setSessionError(null);
+    } catch (error) {
+      console.error("Error fetching sessions:", error);
+      setSessionError(error instanceof Error ? error.message : "Server error while loading sessions");
+      throw error;
+    }
+  };
+
   const fetchCoaches = async () => {
     try {
-      const response = await fetch("http://localhost:9000/api/sessions/coaches/list");
-      const data = await response.json();
-      if (response.ok) {
-        setCoaches(data);
+      const response = await fetch(`${API_BASE_URL}/sessions/coaches/list`);
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || "Failed to load coaches");
       }
+      const data = await response.json();
+      setCoaches(data);
     } catch (error) {
       console.error("Failed to fetch coaches:", error);
+      // Don't throw - coaches are optional
     }
   };
 
   const fetchCohorts = async () => {
     try {
-      const response = await fetch("http://localhost:9000/api/sessions/cohorts/list");
-      const data = await response.json();
-      if (response.ok) {
-        setCohorts(data);
+      const response = await fetch(`${API_BASE_URL}/sessions/cohorts/list`);
+      if (!response.ok) {
+        const data = await response.json();
+        throw new Error(data.message || "Failed to load cohorts");
       }
+      const data = await response.json();
+      setCohorts(data);
     } catch (error) {
       console.error("Failed to fetch cohorts:", error);
+      // Don't throw - cohorts are optional
     }
   };
 
@@ -130,7 +154,7 @@ const SessionsTab = () => {
         sessionPayload.venue = formData.venue.trim();
       }
 
-      const response = await fetch("http://localhost:9000/api/sessions", {
+      const response = await fetch(`${API_BASE_URL}/sessions`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(sessionPayload),
@@ -393,6 +417,16 @@ const SessionsTab = () => {
           <CardContent className="space-y-3">
             {loading ? (
               <p className="text-sm text-muted-foreground">Loading...</p>
+            ) : sessionError ? (
+              <div className="flex flex-col gap-3">
+                <p className="text-sm text-red-500">{sessionError}</p>
+                <button
+                  onClick={() => loadInitialData()}
+                  className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                >
+                  Retry
+                </button>
+              </div>
             ) : upcomingSessions.length > 0 ? (
               upcomingSessions.map((session) => (
                 <div

@@ -1,5 +1,6 @@
 import React, { useEffect, useState } from "react";
 import { Button } from "@/components/ui/button";
+import { API_BASE_URL } from "@/services/api";
 
 // Tournament card list with backend-compatible fetch and fallback dummy data
 const TournamentList = ({ onSelect, onClose, onRegister }) => {
@@ -57,7 +58,7 @@ const TournamentList = ({ onSelect, onClose, onRegister }) => {
       setError(null);
       try {
         // call the working API (user provided)
-        const res = await fetch("http://localhost:9000/api/tournaments", { cache: "no-store" });
+        const res = await fetch(`${API_BASE_URL}/tournaments`, { cache: "no-store" });
         if (!res.ok) throw new Error(`Status ${res.status}`);
         const json = await res.json();
 

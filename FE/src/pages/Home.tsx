@@ -1,7 +1,7 @@
 import { Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Users, Trophy, TrendingUp, Heart, Target, Shield, Calendar, MapPin, Clock } from "lucide-react";
+import { Users, Trophy, TrendingUp, Heart, Target, Shield, Calendar, MapPin, Clock, Image as ImageIcon } from "lucide-react";
 import Navbar from "@/components/Navbar";
 import BottomNav from "@/components/BottomNav";
 import { useState, useEffect, useMemo } from "react";
@@ -103,7 +103,7 @@ const Home = () => {
           timestamp: t.createdAt || t.startDate,
           author: t.createdBy ? "Admin" : "Admin",
           category: "Tournament",
-          imageUrl: t.image ? `${t.image.startsWith("http") ? t.image : `${fileBaseUrl}${t.image}`}` : undefined,
+          imageUrl: t.image ? `${t.image.startsWith("http") ? t.image : `${fileBaseUrl}${t.image}`}` : null,
           location: t.location,
           date: t.startDate,
         }));
@@ -137,7 +137,7 @@ const Home = () => {
         timestamp: t.createdAt || t.startDate,
         author: t.createdBy ? "Admin" : "Admin",
         category: "Tournament",
-        imageUrl: t.image ? `${t.image.startsWith("http") ? t.image : `${fileBaseUrl}${t.image}`}` : undefined,
+        imageUrl: t.image ? `${t.image.startsWith("http") ? t.image : `${fileBaseUrl}${t.image}`}` : null,
         location: t.location,
         date: t.startDate,
       }));
@@ -184,7 +184,7 @@ const Home = () => {
               </span>
             </h1>
             <p className="text-xl md:text-2xl text-muted-foreground max-w-2xl mx-auto">
-              AlgoRhythm brings together Ultimate Frisbee tournaments and youth development programs with AI-driven insights
+              YUltimate brings together Ultimate Frisbee tournaments and youth development programs with AI-driven insights
             </p>
             <div className="flex flex-wrap gap-4 justify-center pt-4">
               <Link to="/select-role">
@@ -223,15 +223,22 @@ const Home = () => {
                   style={{ animationDelay: `${index * 0.1}s` }}
                 >
                   <CardContent className="p-0">
-                    {post.imageUrl && (
-                      <div className="w-full h-48 overflow-hidden">
+                    <div className="w-full h-48 overflow-hidden">
+                      {post.imageUrl ? (
                         <img 
                           src={post.imageUrl} 
                           alt={post.title}
                           className="w-full h-full object-cover transition-transform hover:scale-105"
                         />
-                      </div>
-                    )}
+                      ) : (
+                        <div className="w-full h-full bg-muted flex items-center justify-center">
+                          <div className="text-center text-muted-foreground">
+                            <ImageIcon className="h-12 w-12 mx-auto mb-2 opacity-50" />
+                            <p className="text-sm">No Image</p>
+                          </div>
+                        </div>
+                      )}
+                    </div>
                     <div className="p-6 space-y-3">
                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
                         <Clock className="h-3 w-3" />
@@ -367,7 +374,7 @@ const Home = () => {
         <div className="container mx-auto text-center text-primary-foreground space-y-6">
           <h2 className="text-4xl md:text-5xl font-bold">Ready to Join?</h2>
           <p className="text-xl opacity-90 max-w-2xl mx-auto">
-            Whether you're organizing tournaments or running youth programs, AlgoRhythm has the tools you need
+            Whether you're organizing tournaments or running youth programs, YUltimate has the tools you need
           </p>
           <div className="flex gap-4 justify-center pt-4">
             <Link to="/register">
@@ -391,7 +398,7 @@ const Home = () => {
             <div className="bg-gradient-to-br from-primary to-secondary p-2 rounded-lg">
               <Users className="h-5 w-5 text-primary-foreground" />
             </div>
-            <span className="text-lg font-bold">AlgoRhythm</span>
+            <span className="text-lg font-bold">YUltimate</span>
           </div>
           <p className="text-muted-foreground">
             © 2025 Y-Ultimate. Empowering communities through sport.

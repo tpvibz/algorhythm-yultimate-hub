@@ -6,6 +6,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import TransferRequestDialog from "./TransferRequestDialog";
+import { API_BASE_URL } from "@/services/api";
 
 interface TransferSectionProps {
   playerId: string;
@@ -25,7 +26,7 @@ const TransferSection = ({ playerId, player, onRefresh }: TransferSectionProps) 
   const fetchTransferHistory = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:9000/api/player/${playerId}/transfer-history`);
+      const response = await fetch(`${API_BASE_URL}/player/${playerId}/transfer-history`);
       if (response.ok) {
         const data = await response.json();
         setTransferHistory(data);

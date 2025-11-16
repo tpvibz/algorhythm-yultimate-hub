@@ -7,7 +7,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Image as ImageIcon, RefreshCw, Calendar, MapPin, Users, Trophy } from "lucide-react";
-import { matchImageAPI, tournamentAPI, MatchImage, Tournament, handleAPIError } from "@/services/api";
+import { matchImageAPI, tournamentAPI, MatchImage, Tournament, handleAPIError, API_BASE_URL } from "@/services/api";
 import { toast } from "sonner";
 
 const Gallery = () => {
@@ -134,12 +134,21 @@ const Gallery = () => {
                   onClick={() => handleImageClick(image)}
                 >
                   <div className="relative aspect-video overflow-hidden bg-primary/10">
-                    <img
-                      src={`http://localhost:9000${image.imageUrl}`}
-                      alt={image.caption || "Match image"}
-                      className="w-full h-full object-cover transition-transform hover:scale-110"
-                      loading="lazy"
-                    />
+                    {image.imageUrl ? (
+                      <img
+                        src={image.imageUrl.startsWith("http") ? image.imageUrl : `${API_BASE_URL.replace("/api", "")}${image.imageUrl}`}
+                        alt={image.caption || "Match image"}
+                        className="w-full h-full object-cover transition-transform hover:scale-110"
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-muted flex items-center justify-center">
+                        <div className="text-center text-muted-foreground">
+                          <ImageIcon className="h-10 w-10 mx-auto mb-2 opacity-50" />
+                          <p className="text-sm">No Image</p>
+                        </div>
+                      </div>
+                    )}
                     <div className="absolute top-2 right-2">
                       <Badge variant="secondary" className="bg-black/50 text-white border-0">
                         {image.tournament?.name || image.tournamentName || "Tournament"}
@@ -188,11 +197,20 @@ const Gallery = () => {
                 </DialogHeader>
                 <div className="space-y-4">
                   <div className="relative w-full h-96 rounded-lg overflow-hidden">
-                    <img
-                      src={`http://localhost:9000${selectedImage.imageUrl}`}
-                      alt={selectedImage.caption || "Match image"}
-                      className="w-full h-full object-contain bg-muted"
-                    />
+                    {selectedImage.imageUrl ? (
+                      <img
+                        src={selectedImage.imageUrl.startsWith("http") ? selectedImage.imageUrl : `${API_BASE_URL.replace("/api", "")}${selectedImage.imageUrl}`}
+                        alt={selectedImage.caption || "Match image"}
+                        className="w-full h-full object-contain bg-muted"
+                      />
+                    ) : (
+                      <div className="w-full h-full bg-muted flex items-center justify-center">
+                        <div className="text-center text-muted-foreground">
+                          <ImageIcon className="h-16 w-16 mx-auto mb-4 opacity-50" />
+                          <p className="text-lg">No Image Available</p>
+                        </div>
+                      </div>
+                    )}
                   </div>
                   <div className="space-y-3">
                     {selectedImage.match && selectedImage.match.teamA && selectedImage.match.teamB && (

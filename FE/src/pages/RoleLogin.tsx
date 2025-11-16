@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Trophy, Target, Heart, Users, ArrowLeft } from "lucide-react";
 import { toast } from "sonner";
+import { API_BASE_URL } from "@/services/api";
 
 const RoleLogin = () => {
   const navigate = useNavigate();
@@ -58,7 +59,7 @@ const RoleLogin = () => {
           ? { uniqueUserId: uniqueCode.trim(), role: "admin" }
           : { uniqueUserId: uniqueCode.trim(), password: password.trim(), role };
 
-      const response = await fetch("http://localhost:9000/api/auth/login", {
+      const response = await fetch(`${API_BASE_URL}/auth/login`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify(payload),

@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "sonner";
+import { API_BASE_URL } from "@/services/api";
 
 interface AssignedPlayer {
   _id: string;
@@ -71,13 +72,13 @@ const TeamRegisterForm = ({ open, onOpenChange, tournament }) => {
       }
 
       // Use new endpoint that includes affiliation
-      const response = await fetch(`http://localhost:9000/api/institutions/coaches/${coachId}/players`);
+      const response = await fetch(`${API_BASE_URL}/institutions/coaches/${coachId}/players`);
       if (response.ok) {
         const data = await response.json();
         setAssignedPlayers(data);
       } else {
         // Fallback to old endpoint
-        const fallbackResponse = await fetch(`http://localhost:9000/api/students/coach/${coachId}`);
+        const fallbackResponse = await fetch(`${API_BASE_URL}/students/coach/${coachId}`);
         if (fallbackResponse.ok) {
           const data = await fallbackResponse.json();
           setAssignedPlayers(data);
@@ -153,7 +154,7 @@ const TeamRegisterForm = ({ open, onOpenChange, tournament }) => {
         coachId,
       };
 
-      const res = await fetch("http://localhost:9000/api/teams", {
+      const res = await fetch(`${API_BASE_URL}/teams`, {
         method: "POST",
         headers: {
           "Content-Type": "application/json",

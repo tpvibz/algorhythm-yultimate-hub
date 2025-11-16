@@ -4,6 +4,7 @@ import { Award, Trophy, Star, TrendingUp, Target } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { API_BASE_URL } from "@/services/api";
 
 interface AchievementsSectionProps {
   playerId: string;
@@ -21,7 +22,7 @@ const AchievementsSection = ({ playerId, fullWidth }: AchievementsSectionProps) 
   const fetchAchievements = async () => {
     try {
       setLoading(true);
-      const response = await fetch(`http://localhost:9000/api/player/${playerId}/achievements`);
+      const response = await fetch(`${API_BASE_URL}/player/${playerId}/achievements`);
       if (response.ok) {
         const data = await response.json();
         setAchievements(data);
