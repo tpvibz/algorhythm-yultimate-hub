@@ -45,8 +45,6 @@ All test accounts use password: **123456**
 - `VOL-1762276422711`
 - `VOL-1762276417644`
 
-```
-
 ---
 
 ## ⚡ Features
